@@ -1,0 +1,330 @@
+{
+    "PFNArrayRef": [
+        "inputPFNs", 
+        "outputPFNs"
+    ], 
+    "task": "/pdmvserv_task_HIG-RunIIFall17wmLHEGS-01122__v1_T_180415_203643_8440/HIG-RunIIFall17wmLHEGS-01122_0", 
+    "PrepID": "HIG-RunIIFall17wmLHEGS-01122", 
+    "skippedFiles": [], 
+    "Campaign": "RunIIFall17wmLHEGS", 
+    "wmaid": "2f14c7f8561563a3b3675cd813198fe0", 
+    "dtype": "fwjr", 
+    "wmats": 1526088351.922932, 
+    "fallbackFiles": [], 
+    "LFNArray": [
+        "/store/unmerged/RunIIFall17wmLHEGS/W2JetsToLNu_LHEWpT_150-250_TuneCP5_13TeV-amcnloFXFX-pythia8/LHE/93X_mc2017_realistic_v3_ext1-v1/30095/B0742947-4455-E811-B7EB-001E67E71DEE.root", 
+        "/store/unmerged/RunIIFall17wmLHEGS/W2JetsToLNu_LHEWpT_150-250_TuneCP5_13TeV-amcnloFXFX-pythia8/GEN-SIM/93X_mc2017_realistic_v3_ext1-v1/30095/96D72B47-4455-E811-B7EB-001E67E71DEE.root", 
+        "/store/unmerged/logs/prod/2018/5/12/pdmvserv_task_HIG-RunIIFall17wmLHEGS-01122__v1_T_180415_203643_8440/HIG-RunIIFall17wmLHEGS-01122_0/0095/2/23d2d5af-b874-4662-aa42-743dc71f34b4-395-2-logArchive.tar.gz"
+    ], 
+    "meta_data": {
+        "jobstate": "success", 
+        "ts": 1526088132, 
+        "fwjr_id": "239225-2", 
+        "host": "vocms0253.cern.ch", 
+        "crab_id": null, 
+        "agent_ver": "1.1.12.patch3", 
+        "crab_exit_code": null, 
+        "jobtype": "Production"
+    }, 
+    "steps": [
+        {
+            "status": 0, 
+            "errors": [], 
+            "name": "stageOut1", 
+            "stop": 1526087427, 
+            "site": "T1_DE_KIT", 
+            "start": 1526087421, 
+            "performance": {
+                "multicore": {}, 
+                "storage": {
+                    "writeTotalMB": null, 
+                    "readPercentageOps": null, 
+                    "readAveragekB": null, 
+                    "readTotalMB": null, 
+                    "readNumOps": null, 
+                    "readCachePercentageOps": null, 
+                    "readMBSec": null, 
+                    "writeTotalSecs": null, 
+                    "readTotalSecs": null, 
+                    "readMaxMSec": null
+                }, 
+                "cpu": {
+                    "TotalJobCPU": null, 
+                    "NumberOfStreams": null, 
+                    "TotalInitCPU": null, 
+                    "AvgEventCPU": null, 
+                    "MaxEventCPU": null, 
+                    "EventThroughput": null, 
+                    "TotalInitTime": null, 
+                    "AvgEventTime": null, 
+                    "NumberOfThreads": null, 
+                    "MinEventCPU": null, 
+                    "MaxEventTime": null, 
+                    "TotalJobTime": null, 
+                    "TotalLoopCPU": null, 
+                    "MinEventTime": null, 
+                    "TotalEventCPU": null
+                }, 
+                "memory": {
+                    "PeakValueRss": null, 
+                    "PeakValueVsize": null
+                }
+            }, 
+            "output": [], 
+            "input": []
+        }, 
+        {
+            "status": 0, 
+            "errors": [], 
+            "name": "logArch1", 
+            "stop": 1526087431, 
+            "site": "T1_DE_KIT", 
+            "start": 1526087428, 
+            "performance": {
+                "multicore": {}, 
+                "storage": {
+                    "writeTotalMB": null, 
+                    "readPercentageOps": null, 
+                    "readAveragekB": null, 
+                    "readTotalMB": null, 
+                    "readNumOps": null, 
+                    "readCachePercentageOps": null, 
+                    "readMBSec": null, 
+                    "writeTotalSecs": null, 
+                    "readTotalSecs": null, 
+                    "readMaxMSec": null
+                }, 
+                "cpu": {
+                    "TotalJobCPU": null, 
+                    "NumberOfStreams": null, 
+                    "TotalInitCPU": null, 
+                    "AvgEventCPU": null, 
+                    "MaxEventCPU": null, 
+                    "EventThroughput": null, 
+                    "TotalInitTime": null, 
+                    "AvgEventTime": null, 
+                    "NumberOfThreads": null, 
+                    "MinEventCPU": null, 
+                    "MaxEventTime": null, 
+                    "TotalJobTime": null, 
+                    "TotalLoopCPU": null, 
+                    "MinEventTime": null, 
+                    "TotalEventCPU": null
+                }, 
+                "memory": {
+                    "PeakValueRss": null, 
+                    "PeakValueVsize": null
+                }
+            }, 
+            "output": [
+                {
+                    "branch_hash": null, 
+                    "GUID": null, 
+                    "size": 0, 
+                    "applicationName": null, 
+                    "SEName": null, 
+                    "applicationVersion": null, 
+                    "inputPFNs": [], 
+                    "configURL": null, 
+                    "outputDataset": null, 
+                    "StageOutCommand": null, 
+                    "inputLFNs": [], 
+                    "async_dest": null, 
+                    "events": 0, 
+                    "merged": 0, 
+                    "validStatus": null, 
+                    "adler32": "79040a96", 
+                    "ouput_module_class": null, 
+                    "globalTag": null, 
+                    "catalog": null, 
+                    "module_label": "logArchive", 
+                    "cksum": "4030775858", 
+                    "guid": null, 
+                    "outputPFNs": [], 
+                    "inputDataset": null, 
+                    "runs": [], 
+                    "outputLFNs": [
+                        2
+                    ], 
+                    "location": "T1_DE_KIT_Disk", 
+                    "acquisitionEra": null, 
+                    "processingVer": null, 
+                    "processingStr": null, 
+                    "PNN": null, 
+                    "prep_id": "HIG-RunIIFall17wmLHEGS-01122"
+                }
+            ], 
+            "input": []
+        }, 
+        {
+            "status": 0, 
+            "errors": [], 
+            "name": "cmsRun1", 
+            "stop": 1526087421, 
+            "site": "T1_DE_KIT", 
+            "start": 1526061211, 
+            "performance": {
+                "multicore": {}, 
+                "storage": {
+                    "writeTotalMB": 307.948, 
+                    "readPercentageOps": 1.0, 
+                    "readAveragekB": 47861.07733333333, 
+                    "readTotalMB": 560.872, 
+                    "readNumOps": 1592959.0, 
+                    "readCachePercentageOps": 0.0, 
+                    "readMBSec": 601.6655242067412, 
+                    "writeTotalSecs": 0.42756299999999997, 
+                    "readTotalSecs": 0.0, 
+                    "readMaxMSec": 270.712
+                }, 
+                "cpu": {
+                    "TotalJobCPU": 25685.0, 
+                    "NumberOfStreams": 1, 
+                    "TotalInitCPU": null, 
+                    "AvgEventCPU": null, 
+                    "MaxEventCPU": null, 
+                    "EventThroughput": 0.0697203, 
+                    "TotalInitTime": null, 
+                    "AvgEventTime": 12.842, 
+                    "NumberOfThreads": 1, 
+                    "MinEventCPU": null, 
+                    "MaxEventTime": 116.113, 
+                    "TotalJobTime": 26181.7, 
+                    "TotalLoopCPU": 25680.4, 
+                    "MinEventTime": 0.0166039, 
+                    "TotalEventCPU": null
+                }, 
+                "memory": {
+                    "PeakValueRss": 677.43, 
+                    "PeakValueVsize": 1595.14
+                }
+            }, 
+            "output": [
+                {
+                    "branch_hash": "2936f7e89b54ae7246b5c3c92fa051d4", 
+                    "GUID": null, 
+                    "size": 296028024, 
+                    "applicationName": "cmsRun", 
+                    "SEName": null, 
+                    "applicationVersion": "CMSSW_9_3_6_patch1", 
+                    "inputPFNs": [], 
+                    "configURL": "https://cmsweb.cern.ch/couchdb;;reqmgr_config_cache;;873074d74575f09c19ebf3cdd269fa7e", 
+                    "outputDataset": "/W2JetsToLNu_LHEWpT_150-250_TuneCP5_13TeV-amcnloFXFX-pythia8/RunIIFall17wmLHEGS-93X_mc2017_realistic_v3_ext1-v1/GEN-SIM", 
+                    "StageOutCommand": "gfal2", 
+                    "inputLFNs": [], 
+                    "async_dest": null, 
+                    "events": 409, 
+                    "merged": 0, 
+                    "validStatus": "PRODUCTION", 
+                    "adler32": "13aee61c", 
+                    "ouput_module_class": "PoolOutputModule", 
+                    "globalTag": "93X_mc2017_realistic_v3", 
+                    "catalog": "", 
+                    "module_label": "RAWSIMoutput", 
+                    "cksum": "575064531", 
+                    "guid": "96D72B47-4455-E811-B7EB-001E67E71DEE", 
+                    "outputPFNs": [
+                        1
+                    ], 
+                    "inputDataset": null, 
+                    "runs": [
+                        {
+                            "runNumber": 1, 
+                            "eventsPerLumi": [
+                                72, 
+                                74, 
+                                89, 
+                                90, 
+                                84
+                            ], 
+                            "lumis": [
+                                2686979, 
+                                2686977, 
+                                2686976, 
+                                2686980, 
+                                2686978
+                            ]
+                        }
+                    ], 
+                    "outputLFNs": [
+                        1
+                    ], 
+                    "location": "T1_DE_KIT_Disk", 
+                    "acquisitionEra": "RunIIFall17wmLHEGS", 
+                    "processingVer": 1, 
+                    "processingStr": "93X_mc2017_realistic_v3_ext1", 
+                    "PNN": null, 
+                    "prep_id": "HIG-RunIIFall17wmLHEGS-01122"
+                }, 
+                {
+                    "branch_hash": "baad18a51a4cbab54f85db48954b2717", 
+                    "GUID": null, 
+                    "size": 26878522, 
+                    "applicationName": "cmsRun", 
+                    "SEName": null, 
+                    "applicationVersion": "CMSSW_9_3_6_patch1", 
+                    "inputPFNs": [], 
+                    "configURL": "https://cmsweb.cern.ch/couchdb;;reqmgr_config_cache;;873074d74575f09c19ebf3cdd269fa7e", 
+                    "outputDataset": "/W2JetsToLNu_LHEWpT_150-250_TuneCP5_13TeV-amcnloFXFX-pythia8/RunIIFall17wmLHEGS-93X_mc2017_realistic_v3_ext1-v1/LHE", 
+                    "StageOutCommand": "gfal2", 
+                    "inputLFNs": [], 
+                    "async_dest": null, 
+                    "events": 1825, 
+                    "merged": 0, 
+                    "validStatus": "PRODUCTION", 
+                    "adler32": "e20c8494", 
+                    "ouput_module_class": "PoolOutputModule", 
+                    "globalTag": "93X_mc2017_realistic_v3", 
+                    "catalog": "", 
+                    "module_label": "LHEoutput", 
+                    "cksum": "1862602890", 
+                    "guid": "B0742947-4455-E811-B7EB-001E67E71DEE", 
+                    "outputPFNs": [
+                        0
+                    ], 
+                    "inputDataset": null, 
+                    "runs": [
+                        {
+                            "runNumber": 1, 
+                            "eventsPerLumi": [
+                                365, 
+                                365, 
+                                365, 
+                                365, 
+                                365
+                            ], 
+                            "lumis": [
+                                2686979, 
+                                2686977, 
+                                2686976, 
+                                2686980, 
+                                2686978
+                            ]
+                        }
+                    ], 
+                    "outputLFNs": [
+                        0
+                    ], 
+                    "location": "T1_DE_KIT_Disk", 
+                    "acquisitionEra": "RunIIFall17wmLHEGS", 
+                    "processingVer": 1, 
+                    "processingStr": "93X_mc2017_realistic_v3_ext1", 
+                    "PNN": null, 
+                    "prep_id": "HIG-RunIIFall17wmLHEGS-01122"
+                }
+            ], 
+            "input": []
+        }
+    ], 
+    "PFNArray": [
+        "srm://cmssrm-kit.gridka.de:8443/srm/managerv2\\?SFN=/pnfs/gridka.de/cms/disk-only/store/unmerged/RunIIFall17wmLHEGS/W2JetsToLNu_LHEWpT_150-250_TuneCP5_13TeV-amcnloFXFX-pythia8/LHE/93X_mc2017_realistic_v3_ext1-v1/30095/B0742947-4455-E811-B7EB-001E67E71DEE.root", 
+        "srm://cmssrm-kit.gridka.de:8443/srm/managerv2\\?SFN=/pnfs/gridka.de/cms/disk-only/store/unmerged/RunIIFall17wmLHEGS/W2JetsToLNu_LHEWpT_150-250_TuneCP5_13TeV-amcnloFXFX-pythia8/GEN-SIM/93X_mc2017_realistic_v3_ext1-v1/30095/96D72B47-4455-E811-B7EB-001E67E71DEE.root"
+    ], 
+    "LFNArrayRef": [
+        "outputLFNs", 
+        "inputLFNs", 
+        "skippedFiles", 
+        "fallbackFiles"
+    ], 
+    "stype": "mongodb"
+}
