@@ -57,7 +57,7 @@ def main():
         fout_path = config.get('analytix_collection', 'hdfs_output_root') + '/jobmonitoring/' + date
 
         # Todo Using the shell functionality is possibly unsafe, but required for CMSSpark to successfully complete
-        exitcode = call('run_spark' + ' ' + config.get('analytix_collection', 'cmsspark_script' + ' --fout=' + fout_path + ' --date=' + date + ' --yarn', shell=True)
+        exitcode = call('run_spark' + ' ' + config.get('analytix_collection', 'cmsspark_script') + ' --fout=' + fout_path + ' --date=' + date + ' --yarn', shell=True)
 
         if exitcode != 0:
             print("=== Error while running Spark job for date {}, process exited with code: {}".format(date, exitcode))
