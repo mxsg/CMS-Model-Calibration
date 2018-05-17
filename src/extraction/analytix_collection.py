@@ -33,6 +33,7 @@ def main():
     config.set('analytix_collection', 'start_date', '20180101')
     config.set('analytix_collection', 'day_count', '120')
     config.set('analytix_collection', 'hdfs_output_root', 'hdfs:///cms/users/mstemmer')
+    config.set('analytix_collection', 'hdfs_output_directory', 'wmarchive')
     config.set('analytix_collection', 'setup_script_path', '/afs/cern.ch/user/m/mstemmer/analytix/setup.sh')
     config.set('analytix_collection', 'cmsspark_script', 'gridka_wmarchive.py')
 
@@ -54,7 +55,7 @@ def main():
     print(dates)
 
     for date in dates:
-        fout_path = config.get('analytix_collection', 'hdfs_output_root') + '/jobmonitoring/' + date
+        fout_path = '/'.join([config.get('analytix_collection', 'hdfs_output_root'), config.get('analytix_collection', 'hdfs_output_directory'), date])
 
         # Todo Using the shell functionality is possibly unsafe, but required for CMSSpark to successfully complete
         exitcode = call('run_spark' + ' ' + config.get('analytix_collection', 'cmsspark_script') + ' --fout=' + fout_path + ' --date=' + date + ' --yarn', shell=True)
