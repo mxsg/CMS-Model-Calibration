@@ -30,10 +30,11 @@ def main():
     # Todo Replace this with a real configuration file
     config = ConfigParser.ConfigParser()
     config.add_section('analytix_collection')
-    config.set('analytix_collection', 'start_date', '20180201')
-    config.set('analytix_collection', 'day_count', '89')
+    config.set('analytix_collection', 'start_date', '20180101')
+    config.set('analytix_collection', 'day_count', '120')
     config.set('analytix_collection', 'hdfs_output_root', 'hdfs:///cms/users/mstemmer')
     config.set('analytix_collection', 'setup_script_path', '/afs/cern.ch/user/m/mstemmer/analytix/setup.sh')
+    config.set('analytix_collection', 'cmsspark_script', 'gridka_wmarchive.py')
 
     # Way of setting up configuration for Python 3
     # config['analytix_collection'] = { 'start_date': '20180101',
@@ -56,8 +57,8 @@ def main():
         fout_path = config.get('analytix_collection', 'hdfs_output_root') + '/jobmonitoring/' + date
 
         # Todo Using the shell functionality is possibly unsafe, but required for CMSSpark to successfully complete
-        exitcode = call('run_spark gridka_jm.py' +' --fout=' + fout_path + ' --date=' + date + ' --yarn', shell=True)
-    
+        exitcode = call('run_spark' + ' ' + config.get('analytix_collection', 'cmsspark_script' + ' --fout=' + fout_path + ' --date=' + date + ' --yarn', shell=True)
+
         if exitcode != 0:
             print("=== Error while running Spark job for date {}, process exited with code: {}".format(date, exitcode))
             sys.exit(exitcode)
