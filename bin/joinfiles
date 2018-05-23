@@ -1,0 +1,34 @@
+#!/bin/sh
+# Author: Maximilian Stemmer-Grabow
+# Join and export data from hdfs
+
+if [ "$#" -ne 2 ]; then
+    echo "Usage: joinfiles <start_date> <number_of_days>"
+    exit 1
+fi
+
+
+hdfs_root="hdfs:///cms/users/mstemmer"
+subdir="wmarchive"
+output_file="wmarchive-${1}-${2}d.txt"
+echo "Writing into file: $output_file"
+
+if [ -f $output_file ]; then
+    echo "Output file $output_file already exists."
+    exit 1
+fi
+
+dates=`python -c "import date_utils; print(' '.join(date_utils.constructDateList('20180101', 59)))"`
+echo "Extracting info for dates: $dates"
+
+for date in $dates
+do
+    echo hdfs dfs -getmerge "${hdfs_root}/${subdir}/${date} tmpfile.txt"
+    if [ "$?" -ne 0 ]; then
+        echo "Error while executing hdfs file acquisition for date $date. Exiting."
+        exit 1
+    fi
+
+    echo cat tmpfile.txt >> $output_file
+    echo rm tmpfile.txt
+done
