@@ -1,13 +1,13 @@
 #!/usr/bin/env python
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 import time
 import datetime
 
+
 def constructDateList(start=None, num=1):
     if not start:
-        start = time.strftime("%Y%m%d", time.gmtime(time.time() - num*60*60*24))
-
+        start = time.strftime("%Y%m%d", time.gmtime(time.time() - num * 60 * 60 * 24))
     elif len(start) != 8:
         raise Exception("Date is not in expected format!")
 
