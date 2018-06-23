@@ -35,6 +35,8 @@ class JobMonitoringImporter(CSVImporter):
         logging.info("Jobmonitoring file with dropped columns with shape: {}".format(df.shape))
         logging.debug("Number of distinct JobIDs: {}".format(df.JobId.unique().shape))
 
+        # logging.debug("Number of FileType entries: {}".format(df.FileType.unique()))
+
         self.regularizeHostNames(".gridka.de", df)
 
         return df
