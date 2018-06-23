@@ -7,7 +7,7 @@ import sys
 import pandas as pd
 import numpy as np
 
-import gridka_calibration
+from workflows import gridka_calibration
 
 
 def main():
