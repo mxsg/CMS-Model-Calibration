@@ -8,6 +8,7 @@ import pandas as pd
 import numpy as np
 
 from workflows import gridka_calibration
+from workflows import debug
 
 
 def main():
@@ -17,7 +18,7 @@ def main():
     logging.debug("Running with Pandas version: {}".format(pd.__version__))
     logging.debug("Running with Numpy version: {}".format(np.__version__))
 
-    gridka_calibration.calibrateGridKaModel()
+    debug.runWorkflow()
 
     logging.debug("Model Calibration Finished")
 
