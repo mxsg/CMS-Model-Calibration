@@ -12,7 +12,7 @@ def hist_to_doublepdf(counts, bins):
     keyword = "DoublePDF"
 
     # TODO Was: "({:.8f};{:.8f})"
-    components = ['({};{})'.format(edge, count) for (count, edge) in zip(right_edges, relative_counts)]
+    components = ['({};{})'.format(edge, count) for (edge, count) in zip(right_edges, relative_counts)]
     return '{}[{}]'.format(keyword, ''.join(components))
 
 
@@ -22,11 +22,12 @@ def to_intpmf(values, counts, simplify=True):
     if len(values) == 0:
         raise ValueError("Cannot construct distribution from empty lists.")
 
+    # If there is only one value, simply return it as a string
     if simplify and len(values) == 1:
-        return values[0]
+        return str(values[0])
 
     # Normalize counts to unity
-    relative_counts = counts / len(counts)
+    relative_counts = counts / sum(counts)
 
     keyword = "IntPMF"
 
