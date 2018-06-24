@@ -19,8 +19,10 @@ def hist_to_doublepdf(counts, bins):
 def to_intpmf(values, counts, simplify=True):
     if len(counts) != len(values):
         raise ValueError("Mismatching number of values and counts.")
+    if len(values) == 0:
+        raise ValueError("Cannot construct distribution from empty lists.")
 
-    if simplify == True & & len(values) == 1:
+    if simplify and len(values) == 1:
         return values[0]
 
     # Normalize counts to unity
