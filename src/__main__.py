@@ -18,7 +18,7 @@ def main():
     logging.debug("Running with Pandas version: {}".format(pd.__version__))
     logging.debug("Running with Numpy version: {}".format(np.__version__))
 
-    debug.runWorkflow()
+    debug.run_workflow()
 
     logging.debug("Model Calibration Finished")
 

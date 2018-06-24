@@ -9,7 +9,7 @@ from importers.nodedata import GridKaNodeDataImporter
 import logging
 
 
-def runWorkflow():
+def run_workflow():
     jm_importer = JobMonitoringImporter()
     jobs = jm_importer.importDataFromFile('../data/output_jobmonitoring_2018-03.txt')
 
