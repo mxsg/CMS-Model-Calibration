@@ -1,7 +1,6 @@
 import logging
 
 import pandas as pd
-import numpy as np
 
 from .csv import CSVImporter
 
@@ -29,11 +28,11 @@ class JobMonitoringImporter(CSVImporter):
 
         logging.info("Raw jobmonitoring file read with shape: {}".format(df_raw.shape))
 
-        df = df_raw.drop(self.dropped_columns, axis='columns')
+        df = df_raw.drop([col for col in self.dropped_columns if col in df_raw.columns], axis='columns')
         df = df.drop_duplicates()
 
         logging.info("Jobmonitoring file with dropped columns with shape: {}".format(df.shape))
-        logging.debug("Number of distinct JobIDs: {}".format(df.JobId.unique().shape))
+        # logging.debug("Number of distinct JobIDs: {}".format(df.JobId.unique().shape))
 
         # logging.debug("Number of FileType entries: {}".format(df.FileType.unique()))
 
@@ -43,8 +42,9 @@ class JobMonitoringImporter(CSVImporter):
         # Convert to time stamps
 
         time_stamp_columns = ['StartedRunningTimeStamp', 'FinishedTimeStamp', 'JobExecExitTimeStamp']
+        time_stamps_in_data = [col for col in time_stamp_columns if col in df.columns]
 
-        for col in time_stamp_columns:
+        for col in time_stamps_in_data:
             # Filter out invalid time stamps and then find the first valid date in the data set
             earliest_valid_epoch = df.loc[df[col] > 0, col].min()
             earliest_datetime = pd.to_datetime(earliest_valid_epoch, unit='ms', origin='unix')
@@ -59,8 +59,9 @@ class JobMonitoringImporter(CSVImporter):
 
             logging.debug("Col {}: first date {}, last date {}".format(col, df[col].min(), df[col].max()))
 
-        logging.debug("Number of mismatching time stamps (Exit vs. Finished): {}"
-                      .format(df[df['FinishedTimeStamp'] != df['JobExecExitTimeStamp']].shape[0]))
+        if 'JobExecTimeStamp' in df.columns:
+            logging.debug("Number of mismatching time stamps (Exit vs. Finished): {}"
+                          .format(df[df['FinishedTimeStamp'] != df['JobExecExitTimeStamp']].shape[0]))
 
         return df
 
