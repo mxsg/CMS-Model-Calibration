@@ -36,4 +36,5 @@ def match_jobs_to_node(jobs: pd.DataFrame, nodes: pd.DataFrame):
 
     # logging.debug("Jobs joined with nodes:\n" + str(jobs_nodes))
 
+    logging.debug("Jobs, nodes dtypes:\n{}".format(jobs_nodes.dtypes))
     return jobs_nodes
