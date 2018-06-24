@@ -2,47 +2,88 @@ import logging
 
 import numpy as np
 import pandas as pd
-
+from analysis import jobtypesplit
 from utils import histogram
+from utils import stoex
 
 
+# TODO Put this into another module?
 def extract_demands(df):
-    demands = {}
+    demands_list = []
 
     df_filtered = filter_invalid_data(df)
 
+    df_dict_by_type = jobtypesplit.split_by_column_value(df_filtered, 'Type', copy=True)
+
+    total_entries = df_filtered.shape[0]
+
+    # Filter dictionary for rare job types
+    df_types = {k: v for k, v in df_dict_by_type.items() if v.shape[0]/total_entries >= 0.001}
+    logging.debug("Filtered data frames, dropped {} job types.".format(len(df_dict_by_type) - len(df_types)))
+
+    filtered_entries = sum([df_type.shape[0] for key, df_type in df_types.items()])
+
+    for name, jobs_of_type in df_types.items():
+        demands_dict = {'typeName': name}
+        # TODO This should be more general
+
+        counts, bins = extract_cpu_demand_distribution(jobs_of_type)
+        demands_dict['cpuDemandStoEx'] = stoex.hist_to_doublepdf(counts, bins)
+
+        counts, bins = extract_io_demand_distribution(jobs_of_type)
+        demands_dict['ioTimeStoEx'] = stoex.hist_to_doublepdf(counts, bins)
+
+        counts, bins = extract_io_demand_distribution(jobs_of_type, demand_col='CPUIdleTimeRatio')
+        demands_dict['ioTimeRatioStoEx'] = stoex.hist_to_doublepdf(counts, bins)
+
+        jobslots = extract_jobslot_distribution(jobs_of_type)
+        demands_dict['requiredJobslotsStoEx'] = stoex.to_intpmf(jobslots.index, jobslots.values, simplify=True)
+
+        relative_frequency = jobs_of_type.shape[0] / filtered_entries
+        demands_dict['relativeFrequency'] = relative_frequency
+
+        demands_list = demands_list + [demands_dict]
+
     # This filters jobs by only analyzing those of a type of the frequency at least shown here
-    min_rel_type_frequency = 0.0001
-    df_filtered = filter_df_by_type(df_filtered, min_rel_type_frequency)
+    # min_rel_type_frequency = 0.0001
+    # df_filtered = filter_df_by_type(df_filtered, min_rel_type_frequency)
 
-    counts, bins = extract_cpu_demand_distribution(df_filtered)
-
-    return demands
+    return demands_list
 
 
-def extract_cpu_demand_distribution(df, demand_col='CPUDemand', percentile_cutoff=1.00, bin_count=100):
+def extract_cpu_demand_distribution(df, demand_col='CPUDemand', bin_count=100):
     logging.debug("Extracting CPU demand distribution.")
 
-    logging.debug(
-        "CPU Demands in Data: min {}, max {}, mean {}".format(df[demand_col].min(), df[demand_col].max(),
-                                                              df[demand_col].mean()))
+    counts, bins = bin_equal_width_overflow(df[demand_col], bin_count=bin_count, cutoff_quantile=0.95)
+    return counts, bins
 
-    cutoff_demand = df[demand_col].quantile(percentile_cutoff)
-    df_cutoff = df[df[demand_col] <= cutoff_demand]
 
-    logging.debug(
-        "CPU demands after cutoff: min {}, max {}, mean {}".format(df_cutoff[demand_col].min(),
-                                                                   df_cutoff[demand_col].max(),
-                                                                   df_cutoff[demand_col].mean()))
+def extract_io_demand_distribution(df, demand_col='CPUIdleTime', bin_count=100):
+    logging.debug("Extracting I/O demand distribution.")
 
-    quantiles = df_cutoff[demand_col].quantile(np.linspace(0.0, 1.0, num=bin_count + 1))
-    bin_edges = [0.0] + quantiles.tolist()
+    counts, bins = bin_equal_width_overflow(df[demand_col], bin_count=100)
+    return counts, bins
 
-    hist, bins = pd.cut(df_cutoff[demand_col], bin_edges, right=False, include_lowest=True, duplicates='drop',
-                        retbins=True)
+    # logging.debug(
+    #     "CPU Demands in Data: min {}, max {}, mean {}".format(df[demand_col].min(), df[demand_col].max(),
+    #                                                           df[demand_col].mean()))
+    #
+    # cutoff_demand = df[demand_col].quantile(percentile_cutoff)
+    # df_cutoff = df[df[demand_col] <= cutoff_demand]
+    #
+    # logging.debug(
+    #     "CPU demands after cutoff: min {}, max {}, mean {}".format(df_cutoff[demand_col].min(),
+    #                                                                df_cutoff[demand_col].max(),
+    #                                                                df_cutoff[demand_col].mean()))
+
+    # quantiles = df_cutoff[demand_col].quantile(np.linspace(0.0, 1.0, num=bin_count + 1))
+    # bin_edges = [0.0] + quantiles.tolist()
+
+    # hist, bins = pd.cut(df_cutoff[demand_col], bin_edges, right=False, include_lowest=True, duplicates='drop',
+    #                     retbins=True)
     # rel_hist = hist / hist.sum()
 
-    return hist, bins
+    # return hist, bins
 
 
 def bin_by_quantile(x, bin_count=100):
@@ -83,7 +124,7 @@ def bin_equal_width_overflow(x, bin_count=100, cutoff_quantile=0.95):
 
     logging.debug(
         "Binning with equal width bins, distribution mean: {}, cutoff: {}".format(
-            histogram.calculate_histogram_mean(bins, counts), cutoff))
+            histogram.calculate_histogram_mean(counts, bins), cutoff))
 
     return counts, bins
 
@@ -117,3 +158,7 @@ def filter_job_frequencies(df, min_rel_freq):
     # Normalize after dropping
     filtered_frequencies = filtered_frequencies / sum(filtered_frequencies)
     return filtered_frequencies
+
+
+def extract_jobslot_distribution(df):
+    return df['NCores'].value_counts().sort_index()
