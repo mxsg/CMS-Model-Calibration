@@ -25,7 +25,7 @@ def main():
 
 def setupLogger():
     # Setup logging to file and the console
-    log_path = "../log"
+    log_path = "./log"
 
     # Log into file with current date and time
     now = datetime.now()
