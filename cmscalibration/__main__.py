@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 
 import logging
-from datetime import datetime
 import sys
+from datetime import datetime
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
-from workflows import gridka_calibration
 from workflows import debug
+from workflows import sampling_validation
 
 
 def main():
@@ -18,7 +18,7 @@ def main():
     logging.debug("Running with Pandas version: {}".format(pd.__version__))
     logging.debug("Running with Numpy version: {}".format(np.__version__))
 
-    debug.run_workflow()
+    sampling_validation.run_workflow()
 
     logging.debug("Model Calibration Finished")
 
