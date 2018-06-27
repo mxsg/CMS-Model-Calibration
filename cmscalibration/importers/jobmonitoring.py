@@ -13,7 +13,8 @@ class JobMonitoringImporter(CSVImporter):
                           'FileName': str}
 
         # TODO Make these parameters
-        self.dropped_columns = ['FileName', 'ProtocolUsed']
+        # self.dropped_columns = ['FileName', 'ProtocolUsed']
+        self.dropped_columns = []
         self.header = 'JobId,FileName,IsParentFile,ProtocolUsed,SuccessFlag,FileType,LumiRanges,StrippedFiles,BlockId,StrippedBlocks,BlockName,InputCollection,Application,ApplicationVersion,Type,GenericType,NewGenericType,NewType,SubmissionTool,InputSE,TargetCE,SiteName,SchedulerName,JobMonitorId,TaskJobId,SchedulerJobIdV2,TaskId,TaskMonitorId,NEventsPerJob,NTaskSteps,JobExecExitCode,JobExecExitTimeStamp,StartedRunningTimeStamp,FinishedTimeStamp,WrapWC,WrapCPU,ExeCPU,NCores,NEvProc,NEvReq,WNHostName,JobType,UserId,GridName'
 
     def importDataFromFile(self, path):
