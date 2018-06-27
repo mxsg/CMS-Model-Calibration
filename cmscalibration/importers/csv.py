@@ -1,9 +1,10 @@
 import logging
 
+
 class CSVImporter:
 
     def __init__(self):
-        pass
+        self.dropped_columns = []
 
     def checkHeader(self, path, header):
         with open(path, 'r') as file:
