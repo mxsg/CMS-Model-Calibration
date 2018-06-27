@@ -1,12 +1,17 @@
 import logging
 
-import pandas as pd
 import numpy as np
 
 
 def addPerformanceData(df):
     df['HSScorePerCore'] = df['hs06'] / df['cores']
     df['HSScorePerJobslot'] = df['hs06'] / df['jobslots']
+
+    def logical_cores(physical_cores, jobslots):
+        return 2 * physical_cores if jobslots > physical_cores else physical_cores
+
+    df['coresLogical'] = df.apply(lambda x: logical_cores(x['cores'], x['jobslots']), axis='columns')
+
 
 
 def extractNodeTypes(df):
@@ -30,10 +35,30 @@ def extractNodeTypes(df):
                                  'cores': 'cores'},
                         inplace=True)
 
+    logging.debug("Total job slots in resource environment: {}".format(df['jobslots'].sum()))
+    logging.debug("Total physical cores in resource environment: {}".format(df['cores'].sum()))
+    logging.debug("Total logical cores in resource environment: {}".format(df['coresLogical'].sum()))
+
+
     logging.debug("Node type summary:\n" + node_summary.to_string())
 
     return node_summary
 
+
+def add_logical_core_count(df):
+    def logical_cores(physical_cores, jobslots):
+        return 2 * physical_cores if jobslots > physical_cores else physical_cores
+
+    df['coresLogical'] = df.apply(lambda x: logical_cores(x['cores'], x['jobslots']), axis='columns')
+
+
+def scale_site_to_jobslot_count(df, count):
+    total_slots = df['jobslots'].dot(df['nodeCount'])
+
+    share = count / total_slots
+
+    logging.debug("Scaling site to jobslot count {} of total {}, share {}".format(count, total_slots, share))
+    return scaleSiteWithNodeTypes(df, share)
 
 # TODO Change this to compute the best possible combination of machines to get as close to
 # the desired score as possible
