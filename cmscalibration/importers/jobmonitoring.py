@@ -15,7 +15,13 @@ class JobMonitoringImporter(CSVImporter):
         # TODO Make these parameters
         # self.dropped_columns = ['FileName', 'ProtocolUsed']
         self.dropped_columns = []
+        self.key_columns = ['JobId', 'StartedRunningTimeStamp', 'FinishedTimeStamp']
         self.header = 'JobId,FileName,IsParentFile,ProtocolUsed,SuccessFlag,FileType,LumiRanges,StrippedFiles,BlockId,StrippedBlocks,BlockName,InputCollection,Application,ApplicationVersion,Type,GenericType,NewGenericType,NewType,SubmissionTool,InputSE,TargetCE,SiteName,SchedulerName,JobMonitorId,TaskJobId,SchedulerJobIdV2,TaskId,TaskMonitorId,NEventsPerJob,NTaskSteps,JobExecExitCode,JobExecExitTimeStamp,StartedRunningTimeStamp,FinishedTimeStamp,WrapWC,WrapCPU,ExeCPU,NCores,NEvProc,NEvReq,WNHostName,JobType,UserId,GridName'
+        self.kept_columns = ['JobId', 'FileName', 'Type', 'GenericType', 'SubmissionTool', 'InputSE',
+                             'TaskJobId', 'TaskId', 'TaskMonitorId', 'JobExecExitCode',
+                             'JobExecExitTimeStamp', 'StartedRunningTimeStamp', 'FinishedTimeStamp',
+                             'WrapWC', 'WrapCPU', 'NCores', 'NEvProc',
+                             'WNHostName', 'JobType']
 
     def importDataFromFile(self, path):
         logging.info("Reading jobmonitoring file from {}".format(path))
@@ -29,7 +35,8 @@ class JobMonitoringImporter(CSVImporter):
 
         logging.info("Raw jobmonitoring file read with shape: {}".format(df_raw.shape))
 
-        df = df_raw.drop([col for col in self.dropped_columns if col in df_raw.columns], axis='columns')
+        # df = df_raw.drop([col for col in self.dropped_columns if col in df_raw.columns], axis='columns')
+        df = df_raw[self.kept_columns].copy()
         df = df.drop_duplicates()
 
         logging.info("Jobmonitoring file with dropped columns with shape: {}".format(df.shape))
@@ -39,6 +46,7 @@ class JobMonitoringImporter(CSVImporter):
 
         self.regularizeHostNames(".gridka.de", df)
         self.regularize_job_type(df)
+        self.preprocess_jm(df)
 
         # Convert to time stamps
 
@@ -78,3 +86,9 @@ class JobMonitoringImporter(CSVImporter):
 
     def regularize_job_type(self, df):
         df['JobType'] = df['JobType'].str.lower()
+
+    def preprocess_jm(self, jmdf):
+        # Drop the first slash from the file name, if present
+        jmdf['FileName'] = jmdf['FileName'].replace('^//', '/', regex=True)
+        jmdf['TaskMonitorId.raw'] = jmdf['TaskMonitorId']
+        jmdf['TaskMonitorId'] = jmdf['TaskMonitorId'].replace('^wmagent_', '', regex=True)
