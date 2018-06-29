@@ -11,12 +11,24 @@ class FullWMArchiveImporter:
 
         data = []
 
-        with open('./data/wmarchive-full-20180401.txt') as f:
+        with open(path) as f:
             for line in f:
                 record = ast.literal_eval(line)
                 data.append(self.extract_data(record))
 
-        return pd.DataFrame(data)
+        wmdf = pd.DataFrame(data).drop_duplicates('wmaid')
+        self.convert_columns(wmdf)
+
+        return wmdf
+
+    def convert_columns(self, df):
+        df['startTime'] = pd.to_datetime(df['startTime'], unit='s')
+        df['stopTime'] = pd.to_datetime(df['stopTime'], unit='s')
+        df['cmsrunStartTime'] = pd.to_datetime(df['cmsrunStartTime'], unit='s')
+        df['wmats'] = pd.to_datetime(df['wmats'], unit='s')
+        df['ts'] = pd.to_datetime(df['ts'], unit='s')
+        df['TaskMonitorId'] = df['task'].str.split('/').apply(lambda x: x[1])
+
 
     def extract_data(self, record):
         metadata = record.get('meta_data', {})
@@ -59,8 +71,8 @@ class FullWMArchiveImporter:
         # Include detailed step information
         for step in record['steps']:
 
-            # included_keys = ['start', 'stop', 'site']
-            included_keys = ['site']
+            included_keys = ['start', 'stop', 'site', 'name']
+            # included_keys = ['site']
 
             step_info = {key: step.get(key) for key in included_keys}
 
