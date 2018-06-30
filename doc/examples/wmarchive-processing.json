@@ -1,0 +1,456 @@
+{
+    "Campaign": "Commissioning2018",
+    "LFNArray": [
+        "/store/unmerged/Run2018A/EGamma/ALCARECO/EcalUncalWElectron-22Jun2018-v1/40005/560D8A4F-3477-E811-8F02-001E67792872.root",
+        "/store/unmerged/Run2018A/EGamma/DQMIO/22Jun2018-v1/40005/90EAA94F-3477-E811-8F02-001E67792872.root",
+        "/store/unmerged/logs/prod/2018/6/24/fabozzi_Run2018A-v1-EGamma-22Jun2018_1017_180622_192245_8356/DataProcessing/0005/0/45cfa87d-5a73-4d71-8268-c2dee16ac503-257-0-logArchive.tar.gz",
+        "/store/unmerged/Run2018A/EGamma/ALCARECO/EcalUncalZElectron-22Jun2018-v1/40005/F6AC9A4F-3477-E811-8F02-001E67792872.root",
+        "/store/unmerged/Run2018A/EGamma/MINIAOD/22Jun2018-v1/40005/F02B5D50-3477-E811-8F02-001E67792872.root",
+        "/store/data/Run2018A/EGamma/RAW/v1/000/315/689/00000/BC069BFA-184F-E811-AAC2-FA163E6715A6.root"
+    ],
+    "LFNArrayRef": [
+        "outputLFNs",
+        "inputLFNs",
+        "lfn",
+        "skippedFiles",
+        "fallbackFiles"
+    ],
+    "PFNArray": [
+        "root://xrootd-cms.infn.it//store/data/Run2018A/EGamma/RAW/v1/000/315/689/00000/BC069BFA-184F-E811-AAC2-FA163E6715A6.root",
+        "srm://cmssrm-kit.gridka.de:8443/srm/managerv2\\?SFN=/pnfs/gridka.de/cms/disk-only/store/unmerged/Run2018A/EGamma/MINIAOD/22Jun2018-v1/40005/F02B5D50-3477-E811-8F02-001E67792872.root",
+        "srm://cmssrm-kit.gridka.de:8443/srm/managerv2\\?SFN=/pnfs/gridka.de/cms/disk-only/store/unmerged/Run2018A/EGamma/ALCARECO/EcalUncalWElectron-22Jun2018-v1/40005/560D8A4F-3477-E811-8F02-001E67792872.root",
+        "srm://cmssrm-kit.gridka.de:8443/srm/managerv2\\?SFN=/pnfs/gridka.de/cms/disk-only/store/unmerged/Run2018A/EGamma/ALCARECO/EcalUncalZElectron-22Jun2018-v1/40005/F6AC9A4F-3477-E811-8F02-001E67792872.root",
+        "srm://cmssrm-kit.gridka.de:8443/srm/managerv2\\?SFN=/pnfs/gridka.de/cms/disk-only/store/unmerged/Run2018A/EGamma/DQMIO/22Jun2018-v1/40005/90EAA94F-3477-E811-8F02-001E67792872.root"
+    ],
+    "PFNArrayRef": [
+        "inputPFNs",
+        "outputPFNs",
+        "pfn"
+    ],
+    "PrepID": "ReReco-Run2018A-EGamma-22Jun2018-0001",
+    "dtype": "fwjr",
+    "fallbackFiles": [
+        5
+    ],
+    "meta_data": {
+        "agent_ver": "1.1.14.patch2",
+        "crab_exit_code": null,
+        "crab_id": null,
+        "fwjr_id": "114153-0",
+        "host": "vocms0254.cern.ch",
+        "jobstate": "success",
+        "jobtype": "Processing",
+        "ts": 1529803410,
+        "wn_name": "c01-003-117"
+    },
+    "skippedFiles": [],
+    "steps": [
+        {
+            "errors": [],
+            "input": [],
+            "name": "stageOut1",
+            "output": [],
+            "performance": {
+                "cpu": {
+                    "AvgEventCPU": null,
+                    "AvgEventTime": null,
+                    "EventThroughput": null,
+                    "MaxEventCPU": null,
+                    "MaxEventTime": null,
+                    "MinEventCPU": null,
+                    "MinEventTime": null,
+                    "NumberOfStreams": null,
+                    "NumberOfThreads": null,
+                    "TotalEventCPU": null,
+                    "TotalInitCPU": null,
+                    "TotalInitTime": null,
+                    "TotalJobCPU": null,
+                    "TotalJobTime": null,
+                    "TotalLoopCPU": null
+                },
+                "memory": {
+                    "PeakValueRss": null,
+                    "PeakValueVsize": null
+                },
+                "multicore": {},
+                "storage": {
+                    "readAveragekB": null,
+                    "readCachePercentageOps": null,
+                    "readMBSec": null,
+                    "readMaxMSec": null,
+                    "readNumOps": null,
+                    "readPercentageOps": null,
+                    "readTotalMB": null,
+                    "readTotalSecs": null,
+                    "writeTotalMB": null,
+                    "writeTotalSecs": null
+                }
+            },
+            "site": "T1_DE_KIT",
+            "start": 1529801930,
+            "status": 0,
+            "stop": 1529801934
+        },
+        {
+            "errors": [],
+            "input": [],
+            "name": "logArch1",
+            "output": [
+                {
+                    "GUID": null,
+                    "PNN": null,
+                    "SEName": null,
+                    "StageOutCommand": null,
+                    "acquisitionEra": null,
+                    "adler32": "91f37422",
+                    "applicationName": null,
+                    "applicationVersion": null,
+                    "async_dest": null,
+                    "branch_hash": null,
+                    "catalog": null,
+                    "cksum": "2623412389",
+                    "configURL": null,
+                    "events": 0,
+                    "globalTag": null,
+                    "guid": null,
+                    "inputDataset": null,
+                    "inputLFNs": [],
+                    "inputPFNs": [],
+                    "location": "T1_DE_KIT_Disk",
+                    "merged": 0,
+                    "module_label": "logArchive",
+                    "ouput_module_class": null,
+                    "outputDataset": null,
+                    "outputLFNs": [
+                        2
+                    ],
+                    "outputPFNs": [],
+                    "prep_id": "ReReco-Run2018A-EGamma-22Jun2018-0001",
+                    "processingStr": null,
+                    "processingVer": null,
+                    "runs": [],
+                    "size": 0,
+                    "validStatus": null
+                }
+            ],
+            "performance": {
+                "cpu": {
+                    "AvgEventCPU": null,
+                    "AvgEventTime": null,
+                    "EventThroughput": null,
+                    "MaxEventCPU": null,
+                    "MaxEventTime": null,
+                    "MinEventCPU": null,
+                    "MinEventTime": null,
+                    "NumberOfStreams": null,
+                    "NumberOfThreads": null,
+                    "TotalEventCPU": null,
+                    "TotalInitCPU": null,
+                    "TotalInitTime": null,
+                    "TotalJobCPU": null,
+                    "TotalJobTime": null,
+                    "TotalLoopCPU": null
+                },
+                "memory": {
+                    "PeakValueRss": null,
+                    "PeakValueVsize": null
+                },
+                "multicore": {},
+                "storage": {
+                    "readAveragekB": null,
+                    "readCachePercentageOps": null,
+                    "readMBSec": null,
+                    "readMaxMSec": null,
+                    "readNumOps": null,
+                    "readPercentageOps": null,
+                    "readTotalMB": null,
+                    "readTotalSecs": null,
+                    "writeTotalMB": null,
+                    "writeTotalSecs": null
+                }
+            },
+            "site": "T1_DE_KIT",
+            "start": 1529801934,
+            "status": 0,
+            "stop": 1529801941
+        },
+        {
+            "errors": [],
+            "input": [
+                {
+                    "catalog": "",
+                    "events": 5799,
+                    "guid": "BC069BFA-184F-E811-AAC2-FA163E6715A6",
+                    "input_source_class": "PoolSource",
+                    "input_type": "primaryFiles",
+                    "lfn": 5,
+                    "module_label": "source",
+                    "pfn": 0,
+                    "runs": [
+                        {
+                            "lumis": [
+                                1000
+                            ],
+                            "runNumber": 315689
+                        }
+                    ]
+                }
+            ],
+            "name": "cmsRun1",
+            "output": [
+                {
+                    "GUID": null,
+                    "PNN": null,
+                    "SEName": null,
+                    "StageOutCommand": "gfal2",
+                    "acquisitionEra": "Run2018A",
+                    "adler32": "7b0baa71",
+                    "applicationName": "cmsRun",
+                    "applicationVersion": "CMSSW_10_1_7",
+                    "async_dest": null,
+                    "branch_hash": "77074f468651ddc514c432868a22bedd",
+                    "catalog": "",
+                    "cksum": "3462815344",
+                    "configURL": "https://cmsweb.cern.ch/couchdb;;reqmgr_config_cache;;b62e4819d00bdb299ad0b72867d72622",
+                    "events": 1521,
+                    "globalTag": "101X_dataRun2_Prompt_forECALReReco",
+                    "guid": "560D8A4F-3477-E811-8F02-001E67792872",
+                    "inputDataset": "/EGamma/Run2018A-v1/RAW",
+                    "inputLFNs": [
+                        5
+                    ],
+                    "inputPFNs": [
+                        0
+                    ],
+                    "location": "T1_DE_KIT_Disk",
+                    "merged": 0,
+                    "module_label": "ALCARECOStreamEcalUncalWElectron",
+                    "ouput_module_class": "PoolOutputModule",
+                    "outputDataset": "/EGamma/Run2018A-EcalUncalWElectron-22Jun2018-v1/ALCARECO",
+                    "outputLFNs": [
+                        0
+                    ],
+                    "outputPFNs": [
+                        2
+                    ],
+                    "prep_id": "ReReco-Run2018A-EGamma-22Jun2018-0001",
+                    "processingStr": "22Jun2018",
+                    "processingVer": 1,
+                    "runs": [
+                        {
+                            "eventsPerLumi": [
+                                1521
+                            ],
+                            "lumis": [
+                                1000
+                            ],
+                            "runNumber": 315689
+                        }
+                    ],
+                    "size": 140185076,
+                    "validStatus": "PRODUCTION"
+                },
+                {
+                    "GUID": null,
+                    "PNN": null,
+                    "SEName": null,
+                    "StageOutCommand": "gfal2",
+                    "acquisitionEra": "Run2018A",
+                    "adler32": "9a257ce6",
+                    "applicationName": "cmsRun",
+                    "applicationVersion": "CMSSW_10_1_7",
+                    "async_dest": null,
+                    "branch_hash": "d41d8cd98f00b204e9800998ecf8427e",
+                    "catalog": "",
+                    "cksum": "1589790801",
+                    "configURL": "https://cmsweb.cern.ch/couchdb;;reqmgr_config_cache;;b62e4819d00bdb299ad0b72867d72622",
+                    "events": 0,
+                    "globalTag": "101X_dataRun2_Prompt_forECALReReco",
+                    "guid": "90EAA94F-3477-E811-8F02-001E67792872",
+                    "inputDataset": "/EGamma/Run2018A-v1/RAW",
+                    "inputLFNs": [
+                        5
+                    ],
+                    "inputPFNs": [
+                        0
+                    ],
+                    "location": "T1_DE_KIT_Disk",
+                    "merged": 0,
+                    "module_label": "DQMoutput",
+                    "ouput_module_class": "DQMRootOutputModule",
+                    "outputDataset": "/EGamma/Run2018A-22Jun2018-v1/DQMIO",
+                    "outputLFNs": [
+                        1
+                    ],
+                    "outputPFNs": [
+                        4
+                    ],
+                    "prep_id": "ReReco-Run2018A-EGamma-22Jun2018-0001",
+                    "processingStr": "22Jun2018",
+                    "processingVer": 1,
+                    "runs": [
+                        {
+                            "eventsPerLumi": [
+                                0
+                            ],
+                            "lumis": [
+                                1000
+                            ],
+                            "runNumber": 315689
+                        }
+                    ],
+                    "size": 29911956,
+                    "validStatus": "PRODUCTION"
+                },
+                {
+                    "GUID": null,
+                    "PNN": null,
+                    "SEName": null,
+                    "StageOutCommand": "gfal2",
+                    "acquisitionEra": "Run2018A",
+                    "adler32": "78e0c4ba",
+                    "applicationName": "cmsRun",
+                    "applicationVersion": "CMSSW_10_1_7",
+                    "async_dest": null,
+                    "branch_hash": "77074f468651ddc514c432868a22bedd",
+                    "catalog": "",
+                    "cksum": "2650543599",
+                    "configURL": "https://cmsweb.cern.ch/couchdb;;reqmgr_config_cache;;b62e4819d00bdb299ad0b72867d72622",
+                    "events": 290,
+                    "globalTag": "101X_dataRun2_Prompt_forECALReReco",
+                    "guid": "F6AC9A4F-3477-E811-8F02-001E67792872",
+                    "inputDataset": "/EGamma/Run2018A-v1/RAW",
+                    "inputLFNs": [
+                        5
+                    ],
+                    "inputPFNs": [
+                        0
+                    ],
+                    "location": "T1_DE_KIT_Disk",
+                    "merged": 0,
+                    "module_label": "ALCARECOStreamEcalUncalZElectron",
+                    "ouput_module_class": "PoolOutputModule",
+                    "outputDataset": "/EGamma/Run2018A-EcalUncalZElectron-22Jun2018-v1/ALCARECO",
+                    "outputLFNs": [
+                        3
+                    ],
+                    "outputPFNs": [
+                        3
+                    ],
+                    "prep_id": "ReReco-Run2018A-EGamma-22Jun2018-0001",
+                    "processingStr": "22Jun2018",
+                    "processingVer": 1,
+                    "runs": [
+                        {
+                            "eventsPerLumi": [
+                                290
+                            ],
+                            "lumis": [
+                                1000
+                            ],
+                            "runNumber": 315689
+                        }
+                    ],
+                    "size": 31435812,
+                    "validStatus": "PRODUCTION"
+                },
+                {
+                    "GUID": null,
+                    "PNN": null,
+                    "SEName": null,
+                    "StageOutCommand": "gfal2",
+                    "acquisitionEra": "Run2018A",
+                    "adler32": "ea2807ed",
+                    "applicationName": "cmsRun",
+                    "applicationVersion": "CMSSW_10_1_7",
+                    "async_dest": null,
+                    "branch_hash": "4883568a653458c1fd7996d9d289982e",
+                    "catalog": "",
+                    "cksum": "3196969752",
+                    "configURL": "https://cmsweb.cern.ch/couchdb;;reqmgr_config_cache;;b62e4819d00bdb299ad0b72867d72622",
+                    "events": 5799,
+                    "globalTag": "101X_dataRun2_Prompt_forECALReReco",
+                    "guid": "F02B5D50-3477-E811-8F02-001E67792872",
+                    "inputDataset": "/EGamma/Run2018A-v1/RAW",
+                    "inputLFNs": [
+                        5
+                    ],
+                    "inputPFNs": [
+                        0
+                    ],
+                    "location": "T1_DE_KIT_Disk",
+                    "merged": 0,
+                    "module_label": "MINIAODoutput",
+                    "ouput_module_class": "PoolOutputModule",
+                    "outputDataset": "/EGamma/Run2018A-22Jun2018-v1/MINIAOD",
+                    "outputLFNs": [
+                        4
+                    ],
+                    "outputPFNs": [
+                        1
+                    ],
+                    "prep_id": "ReReco-Run2018A-EGamma-22Jun2018-0001",
+                    "processingStr": "22Jun2018",
+                    "processingVer": 1,
+                    "runs": [
+                        {
+                            "eventsPerLumi": [
+                                5799
+                            ],
+                            "lumis": [
+                                1000
+                            ],
+                            "runNumber": 315689
+                        }
+                    ],
+                    "size": 189760800,
+                    "validStatus": "PRODUCTION"
+                }
+            ],
+            "performance": {
+                "cpu": {
+                    "AvgEventCPU": null,
+                    "AvgEventTime": 12.5398,
+                    "EventThroughput": 0.631399,
+                    "MaxEventCPU": null,
+                    "MaxEventTime": 111.638,
+                    "MinEventCPU": null,
+                    "MinEventTime": 1.438,
+                    "NumberOfStreams": 8,
+                    "NumberOfThreads": 8,
+                    "TotalEventCPU": null,
+                    "TotalInitCPU": 105.818,
+                    "TotalInitTime": 302.341,
+                    "TotalJobCPU": 71203.4,
+                    "TotalJobTime": 9509.42,
+                    "TotalLoopCPU": 71059.9
+                },
+                "memory": {
+                    "PeakValueRss": 5565.56,
+                    "PeakValueVsize": 8653.32
+                },
+                "multicore": {},
+                "storage": {
+                    "readAveragekB": 130895.872,
+                    "readCachePercentageOps": 0.0,
+                    "readMBSec": 35.81017480950246,
+                    "readMaxMSec": 7642.94,
+                    "readNumOps": 9125.0,
+                    "readPercentageOps": 1.0,
+                    "readTotalMB": 7669.68,
+                    "readTotalSecs": 0.0,
+                    "writeTotalMB": 344.641,
+                    "writeTotalSecs": 8.53626
+                }
+            },
+            "site": "T1_DE_KIT",
+            "start": 1529792348,
+            "status": 0,
+            "stop": 1529801930
+        }
+    ],
+    "stype": "mongodb",
+    "task": "/fabozzi_Run2018A-v1-EGamma-22Jun2018_1017_180622_192245_8356/DataProcessing",
+    "wmaid": "4d8d80d1334ce40081ce90970bfe96ad",
+    "wmats": 1529803674.853627
+}
