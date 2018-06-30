@@ -7,7 +7,7 @@ from .csv import CSVImporter
 
 class JobMonitoringImporter(CSVImporter):
 
-    def __init__(self):
+    def __init__(self, timezone_correction=None):
         # TODO Explicitly specify DTypes!
         self.jm_dtypes = {'JobId': int,
                           'FileName': str}
@@ -22,6 +22,7 @@ class JobMonitoringImporter(CSVImporter):
                              'JobExecExitTimeStamp', 'StartedRunningTimeStamp', 'FinishedTimeStamp',
                              'WrapWC', 'WrapCPU', 'NCores', 'NEvProc',
                              'WNHostName', 'JobType']
+        self.timezone_correction = timezone_correction
 
     def importDataFromFile(self, path):
         logging.info("Reading jobmonitoring file from {}".format(path))
@@ -68,6 +69,11 @@ class JobMonitoringImporter(CSVImporter):
 
             logging.debug("Col {}: first date {}, last date {}".format(col, df[col].min(), df[col].max()))
 
+        # TODO This may not be valid in all cases or for all data sets!
+        # Make this configurable for the importer!
+        if self.timezone_correction is not None:
+            self.correct_timestamps(df, time_stamp_columns, self.timezone_correction)
+
         if 'JobExecTimeStamp' in df.columns:
             logging.debug("Number of mismatching time stamps (Exit vs. Finished): {}"
                           .format(df[df['FinishedTimeStamp'] != df['JobExecExitTimeStamp']].shape[0]))
@@ -92,3 +98,15 @@ class JobMonitoringImporter(CSVImporter):
         jmdf['FileName'] = jmdf['FileName'].replace('^//', '/', regex=True)
         jmdf['TaskMonitorId.raw'] = jmdf['TaskMonitorId']
         jmdf['TaskMonitorId'] = jmdf['TaskMonitorId'].replace('^wmagent_', '', regex=True)
+
+    def correct_timestamps(self, jmdf, ts_columns, tz_string='UTC'):
+
+        target_timezone = 'UTC'
+
+        if target_timezone == tz_string:
+            return
+
+        for col in ts_columns:
+            # Save uncorrected time stamp in another column
+            jmdf[col + '.raw'] = jmdf[col]
+            jmdf[col] = jmdf[col].dt.tz_localize('UTC').dt.tz_convert(tz_string).dt.tz_localize(None)
