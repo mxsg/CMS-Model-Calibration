@@ -22,7 +22,25 @@ class JobMonitoringImporter(CSVImporter):
                              'JobExecExitTimeStamp', 'StartedRunningTimeStamp', 'FinishedTimeStamp',
                              'WrapWC', 'WrapCPU', 'NCores', 'NEvProc',
                              'WNHostName', 'JobType']
+
         self.timezone_correction = timezone_correction
+
+    def from_file_list(self, path_list):
+        # TODO Optimize this!
+        logging.info("Reading jobmonitoring files from the following paths: {}".format(path_list))
+
+        df_list = [self.read_file(path) for path in path_list]
+
+        df = pd.concat(df_list)
+
+        return self.convert_data(df)
+
+    def read_file(self, path):
+        self.checkHeader(path, self.header)
+
+        df_raw = pd.read_csv(path, sep=',', dtype=self.jm_dtypes)
+
+        return df_raw
 
     def importDataFromFile(self, path):
         logging.info("Reading jobmonitoring file from {}".format(path))
@@ -36,8 +54,30 @@ class JobMonitoringImporter(CSVImporter):
 
         logging.info("Raw jobmonitoring file read with shape: {}".format(df_raw.shape))
 
+        return self.convert_data(df_raw)
+
+    def regularizeHostNames(self, site_suffix, df):
+        logging.debug("Regularizing Host Names")
+
+        df['WNHostName.raw'] = df['WNHostName']
+
+        df.WNHostName.replace('{}$'.format(site_suffix), '', regex=True, inplace=True)
+
+        logging.debug("Host Name Count before {}, after {}"
+                      .format(df['WNHostName.raw'].unique().shape[0], df.WNHostName.unique().shape[0]))
+
+    def regularize_job_type(self, df):
+        df['JobType'] = df['JobType'].str.lower()
+
+    def preprocess_jm(self, jmdf):
+        # Drop the first slash from the file name, if present
+        jmdf['FileName'] = jmdf['FileName'].replace('^//', '/', regex=True)
+        jmdf['TaskMonitorId.raw'] = jmdf['TaskMonitorId']
+        jmdf['TaskMonitorId'] = jmdf['TaskMonitorId'].replace('^wmagent_', '', regex=True)
+
+    def convert_data(self, jmdf):
         # df = df_raw.drop([col for col in self.dropped_columns if col in df_raw.columns], axis='columns')
-        df = df_raw[self.kept_columns].copy()
+        df = jmdf[self.kept_columns].copy()
         df = df.drop_duplicates()
 
         logging.info("Jobmonitoring file with dropped columns with shape: {}".format(df.shape))
@@ -79,25 +119,6 @@ class JobMonitoringImporter(CSVImporter):
                           .format(df[df['FinishedTimeStamp'] != df['JobExecExitTimeStamp']].shape[0]))
 
         return df
-
-    def regularizeHostNames(self, site_suffix, df):
-        logging.debug("Regularizing Host Names")
-
-        df['WNHostName.raw'] = df['WNHostName']
-
-        df.WNHostName.replace('{}$'.format(site_suffix), '', regex=True, inplace=True)
-
-        logging.debug("Host Name Count before {}, after {}"
-                      .format(df['WNHostName.raw'].unique().shape[0], df.WNHostName.unique().shape[0]))
-
-    def regularize_job_type(self, df):
-        df['JobType'] = df['JobType'].str.lower()
-
-    def preprocess_jm(self, jmdf):
-        # Drop the first slash from the file name, if present
-        jmdf['FileName'] = jmdf['FileName'].replace('^//', '/', regex=True)
-        jmdf['TaskMonitorId.raw'] = jmdf['TaskMonitorId']
-        jmdf['TaskMonitorId'] = jmdf['TaskMonitorId'].replace('^wmagent_', '', regex=True)
 
     def correct_timestamps(self, jmdf, ts_columns, tz_string='UTC'):
 
