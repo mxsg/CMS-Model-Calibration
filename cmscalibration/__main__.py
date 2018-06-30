@@ -7,12 +7,38 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 
+import configparser
+
 from workflows import debug
 from workflows import sampling_validation
+from utils import config
 
 
 def main():
+
     setupLogger()
+
+    conf_path = 'calibration.conf'
+    param_count = len(sys.argv) - 1
+
+    # Check for supplied configuration file or standard configuration file location
+    if param_count > 1:
+        print("Please provide a single configuration file path.")
+        print("You can also supply a configuration in the standard location '{}'".format(conf_path))
+        sys.exit(1)
+
+    if param_count == 1:
+        conf_path = sys.argv[1]
+
+    # Load configuration file
+    try:
+        config.load_config(conf_path)
+    except ValueError as e:
+        print("Could not load configuration file. Error: {}".format(e))
+        print("Exiting.")
+        sys.exit(1)
+
+
     logging.debug("Starting Model Calibration")
 
     logging.debug("Running with Pandas version: {}".format(pd.__version__))
