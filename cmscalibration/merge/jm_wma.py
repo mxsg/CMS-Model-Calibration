@@ -3,9 +3,21 @@ import logging
 import pandas as pd
 
 
-def match_jobs(jmdf, wmdf):
-    jmdf, wmdf = prepare_matching(jmdf, wmdf)
+def match_jobs(jmdf, wmdf, split_keys):
+    # split_keys = ['TaskMonitorId', 'WNHostName']
+    groups = split_with_keys(jmdf, split_keys)
 
+    match_df_list = []
+    for group_keys, group_jmdf in groups:
+        group_wmdf = wmdf[(wmdf['TaskMonitorId'] == group_keys[0]) & (wmdf['wn_name'] == group_keys[1])]
+
+        # print("matching group lengths: wmdf {}, jmdf {}".format(group_wmdf.shape[0], group_jmdf.shape[0]))
+
+        match_df_list.append(match_on_files(group_jmdf, group_wmdf))
+
+    file_matches = pd.concat(match_df_list)
+
+    return file_matches
 
 def prepare_matching(jmdf, wmdf):
     logging.debug("Matching data frames, jmdf with {} entries, wma {}.".format(jmdf.shape[0], wmdf.shape[0]))
@@ -22,11 +34,10 @@ def prepare_matching(jmdf, wmdf):
     wmdf.set_index(wmdf_key, inplace=True)
     wmdf[wmdf_key] = wmdf.index
 
-
     # Keep the last row, as it the one that ran the longest
     # jmdf = jmdf.drop_duplicates(jmdf_key, keep='last')
-
     return jmdf, wmdf
+
 
 def match_on_files(jmdf, wmdf):
     jmdf_file_col = 'FileName'
@@ -35,10 +46,26 @@ def match_on_files(jmdf, wmdf):
     jm_files = jmdf_file_df(jmdf, jmdf_file_col, jmdf_key)
     wm_files = wmdf_file_df(wmdf)
 
+    file_matches = jm_files.merge(wm_files, on='FileName')
+
+    matches_per_wmaid = file_matches.groupby('wmaid')['JobId'].nunique()
+    single_wmaid_matches = matches_per_wmaid[matches_per_wmaid == 1].index
+    matches_per_wmaid
+
+    matches_per_jobid = file_matches.groupby('JobId')['wmaid'].nunique()
+    single_jobid_matches = matches_per_jobid[matches_per_jobid == 1]
+    single_jobid_matches
+
+    single_wmaid_multiple_jobids = \
+        file_matches.loc[file_matches['wmaid'].isin(single_wmaid_matches)].drop(columns='FileName').drop_duplicates()
+
+    perfect_matches = single_wmaid_multiple_jobids[
+        single_wmaid_multiple_jobids['JobId'].isin(single_jobid_matches.index)]
+
+    return perfect_matches
 
 
 def aggregate_jmdf(jmdf):
-
     # TODO For now, simply drop rows with duplicated JobId.
     # Later, generate unique identifier instead of doing this!
     # key_cols = ['JobId', 'StartedRunningTimeStamp', 'FinishedTimeStamp']
@@ -54,11 +81,6 @@ def aggregate_jmdf(jmdf):
     # jmdf = jmdf.set_index(jmdf_key)
     # # Duplicate key into its own column again
     # jmdf[jmdf_key] = jmdf.index
-
-
-
-
-
 
 
 def check_task_id_diffs(jmdf, wmdf):
@@ -136,7 +158,6 @@ def split(df, group):
 def split_with_keys(df, group):
     grouped = df.groupby(group)
     return [(x, grouped.get_group(x)) for x in grouped.groups]
-
 
 # def match_by_files(self, jmdf, wmdf):
 #     # This requires the two data frames to be limited to the same time period
