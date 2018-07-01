@@ -18,7 +18,7 @@ def main():
 
     setupLogger()
 
-    conf_path = 'calibration.conf'
+    conf_path = 'calibration.json'
     param_count = len(sys.argv) - 1
 
     # Check for supplied configuration file or standard configuration file location
