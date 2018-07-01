@@ -8,9 +8,27 @@ from .csv import CSVImporter
 class JobMonitoringImporter(CSVImporter):
 
     def __init__(self, timezone_correction=None):
-        # TODO Explicitly specify DTypes!
-        self.jm_dtypes = {'JobId': int,
-                          'FileName': str}
+        self.jm_dtypes = {
+            'JobId': int,
+            'FileName': str,
+            'Type': str,
+            'GenericType': str,
+            'SubmissionTool': str,
+            'InputSE': str,
+            'TaskJobId': int,
+            'TaskId': int,
+            'TaskMonitorId': str,
+            'JobExecExitCode': float,  # Contains null values
+            'JobExecExitTimeStamp': int,
+            'StartedRunningTimeStamp': int,
+            'FinishedTimeStamp': int,
+            'WrapWC': float,
+            'WrapCPU': float,
+            'NCores': int,
+            'NEvProc': int,
+            'WNHostName': str,
+            'JobType': str
+        }
 
         # TODO Make these parameters
         # self.dropped_columns = ['FileName', 'ProtocolUsed']
