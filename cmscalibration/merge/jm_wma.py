@@ -3,21 +3,61 @@ import logging
 import pandas as pd
 
 
-def match_jobs(jmdf, wmdf, split_keys):
+def match_jobs(jmdf, wmdf):
     # split_keys = ['TaskMonitorId', 'WNHostName']
-    groups = split_with_keys(jmdf, split_keys)
+    split_key = 'TaskMonitorId'
+
+    timestamp_col = 'JobExecExitTimeStamp'
+    # TODO Change this to use configuration
+    dates = pd.date_range(jmdf['JobExecExitTimeStamp'].min().normalize(),
+                          jmdf['JobExecExitTimeStamp'].max().normalize(),
+                          freq='D')
+
+    jmdf_subsets = [subset_day(jmdf, timestamp_col, date) for date in dates]
+    print("Daily counts: {}".format(list(map(len, jmdf_subsets))))
+
+    wmdf_subsets = [subset_day(wmdf, 'stopTime', date) for date in dates]
+    print("Daily counts: {}".format(list(map(len, wmdf_subsets))))
+
+    # TODO Do not subset here
+    jmdf = jmdf[jmdf['JobExecExitTimeStamp'].notnull()].copy()
+    wmdf = wmdf[wmdf['stopTime'].notnull()].copy()
+
+    jmdf['jmdfStopDay'] = jmdf['JobExecExitTimeStamp'].dt.normalize()
+    wmdf['wmdfStopDay'] = wmdf['stopTime'].dt.normalize()
+
+    print("Splitting into groups by day and TaskMonitorId")
+    groups = split_with_keys(jmdf, ['jmdfStopDay', split_key])
 
     match_df_list = []
+    print("Number of groups to match: {}".format(len(groups)))
+
+    matched = 0
+    to_match = jmdf.shape[0]
+
     for group_keys, group_jmdf in groups:
-        group_wmdf = wmdf[(wmdf['TaskMonitorId'] == group_keys[0]) & (wmdf['wn_name'] == group_keys[1])]
-
+        print("Matching group with {} entries".format(len(group_jmdf)))
+        group_wmdf = wmdf[(wmdf['wmdfStopDay'] == group_keys[0]) & (wmdf['TaskMonitorId'] == group_keys[1])]
+        # group_wmdf = wmdf[wmdf['TaskMonitorId'] == group_key]
+        #
         # print("matching group lengths: wmdf {}, jmdf {}".format(group_wmdf.shape[0], group_jmdf.shape[0]))
-
+        matches = match_on_files(group_jmdf, group_wmdf)
+        # print("{} matches found".format(matches.shape[0]))
+        matched += group_jmdf.shape[0]
+        print("Total matched {}, to be done {} ({} %)".format(matched, to_match, matched/to_match*100))
         match_df_list.append(match_on_files(group_jmdf, group_wmdf))
 
     file_matches = pd.concat(match_df_list)
 
     return file_matches
+
+
+def subset_day(df, column, timestamp):
+    day = timestamp.normalize()
+    next_day = day + pd.to_timedelta('1d')
+
+    return df[(df[column] >= day) & (df[column] < next_day)]
+
 
 def prepare_matching(jmdf, wmdf):
     logging.debug("Matching data frames, jmdf with {} entries, wma {}.".format(jmdf.shape[0], wmdf.shape[0]))
@@ -43,26 +83,71 @@ def match_on_files(jmdf, wmdf):
     jmdf_file_col = 'FileName'
 
     jmdf_key = 'JobId'
-    jm_files = jmdf_file_df(jmdf, jmdf_file_col, jmdf_key)
-    wm_files = wmdf_file_df(wmdf)
+    jm_files = jmdf_file_df(jmdf, jmdf_file_col, jmdf_key,
+                            additional_cols=['StartedRunningTimeStamp', 'JobExecExitTimeStamp'])
+    wm_files = wmdf_file_df(wmdf, additional_cols=['startTime', 'stopTime'])
 
     file_matches = jm_files.merge(wm_files, on='FileName')
 
-    matches_per_wmaid = file_matches.groupby('wmaid')['JobId'].nunique()
-    single_wmaid_matches = matches_per_wmaid[matches_per_wmaid == 1].index
-    matches_per_wmaid
+    # After merging, we do not need to retain the file names themselves, but only the association
+    possible_matches = file_matches.drop(columns='FileName').drop_duplicates()
 
-    matches_per_jobid = file_matches.groupby('JobId')['wmaid'].nunique()
-    single_jobid_matches = matches_per_jobid[matches_per_jobid == 1]
-    single_jobid_matches
+    # TODO Make this generic for general timestamps
+    def filter_distinct_matches(group):
+        filter_threshold = 20
+        group = group[abs((group['startTime'] - group['StartedRunningTimeStamp']).dt.total_seconds()) < filter_threshold]
+        group = group[abs((group['stopTime'] - group['JobExecExitTimeStamp']).dt.total_seconds()) < filter_threshold]
+        return group
 
-    single_wmaid_multiple_jobids = \
-        file_matches.loc[file_matches['wmaid'].isin(single_wmaid_matches)].drop(columns='FileName').drop_duplicates()
+    grouped = possible_matches.groupby(jmdf_key)
 
-    perfect_matches = single_wmaid_multiple_jobids[
-        single_wmaid_multiple_jobids['JobId'].isin(single_jobid_matches.index)]
+    filtered_matches = grouped.apply(filter_distinct_matches)
 
-    return perfect_matches
+    perfect_matches = filtered_matches.groupby('JobId').filter(lambda x: len(x) == 1)
+
+    if perfect_matches.empty:
+        return pd.DataFrame()
+    else:
+        return perfect_matches[['JobId', 'wmaid']]
+
+
+    # TODO Make this generic for general timestamps
+    # file_matches['startTimeDiff'] = file_matches.apply(lambda x: abs((x['startTime'] - x['StartedRunningTimeStamp']).total_seconds()), axis=1)
+    # file_matches['stopTimeDiff'] = file_matches.apply(lambda x: abs((x['stopTime'] - x['JobExecExitTimeStamp']).total_seconds()), axis=1)
+    # print(file_matches)
+
+    # file_matches['startTimeDiff'] = file_matches.apply(
+    #     lambda x: abs_time_diff(x['startTime'], x['StartedRunningTimeStamp']), axis=1)
+    # file_matches['stopTimeDiff'] = file_matches.apply(lambda x: abs_time_diff(x['stopTime'], x['JobExecExitTimeStamp']),
+    #                                                   axis=1)
+
+    # print(file_matches)
+
+    # Filter via time stamps
+    # filtered_matches = file_matches[(file_matches['startTimeDiff'] <= 20) & (file_matches['stopTimeDiff'] <= 20)]
+    #
+    # matches_per_wmaid = filtered_matches.groupby('wmaid')['JobId'].nunique()
+    # single_wmaid_matches = matches_per_wmaid[matches_per_wmaid == 1].index
+    #
+    # matches_per_jobid = filtered_matches.groupby('JobId')['wmaid'].nunique()
+    # single_jobid_matches = matches_per_jobid[matches_per_jobid == 1]
+    #
+    # single_wmaid_multiple_jobids = \
+    #     file_matches.loc[file_matches['wmaid'].isin(single_wmaid_matches)].drop(columns='FileName').drop_duplicates()
+    #
+    # perfect_matches = single_wmaid_multiple_jobids[
+    #     single_wmaid_multiple_jobids['JobId'].isin(single_jobid_matches.index)]
+
+def match_on_metadata(jmdf, wmdf):
+    pass
+
+    # for jm_row in jmdf.iterrows():
+    #     start_matches = wmdf
+
+
+def abs_time_diff(time1, time2):
+    print("Diff diff between: {} and {} ".format(time1, time2))
+    abs((time1 - time2).total_seconds())
 
 
 def aggregate_jmdf(jmdf):
@@ -102,19 +187,28 @@ def check_task_id_diffs(jmdf, wmdf):
     logging.debug("Workflows more often in jmdf than wmdf: \n{}".format(more_jmdf))
 
 
-def wmdf_file_df(wmdf):
+def wmdf_file_df(wmdf, additional_cols=None):
+    if additional_cols is None:
+        additional_cols = []
+
+    wmdf = wmdf[['wmaid', 'LFNArray'] + additional_cols]
+
     # Files from WMArchive table
     s = wmdf.apply(lambda x: pd.Series(x['LFNArray']), axis=1).stack().reset_index(level=1, drop=True)
     s.name = 'FileName'
     wm_files = wmdf.drop('LFNArray', axis=1).join(s)
-    wm_files = wm_files[['FileName', 'wmaid']]
+
+    wm_files = wm_files[['FileName', 'wmaid'] + additional_cols]
     return wm_files
 
 
-def jmdf_file_df(jmdf, file_col, key):
+def jmdf_file_df(jmdf, file_col, key, additional_cols=None):
+    if additional_cols == None:
+        additional_cols = []
+
     # Create data frame with all files from JM table
     key_in_cols = (key in jmdf.columns)
-    jm_files = jmdf.reset_index(drop=key_in_cols)[[file_col, key]].copy()
+    jm_files = jmdf.reset_index(drop=key_in_cols)[[file_col, key] + additional_cols].copy()
     return jm_files
 
 
@@ -159,6 +253,10 @@ def split_with_keys(df, group):
     grouped = df.groupby(group)
     return [(x, grouped.get_group(x)) for x in grouped.groups]
 
+
 # def match_by_files(self, jmdf, wmdf):
 #     # This requires the two data frames to be limited to the same time period
 #     pass
+
+def split_by_date(jmdf, wmdf):
+    pass
