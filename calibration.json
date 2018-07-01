@@ -1,0 +1,11 @@
+{
+    "start_date": "2018-04-01",
+    "end_date": "2018-05-31",
+    "jm_input_files": [
+
+    ],
+    "wma_input_files": [
+        "/Volumes/storage/ba-thesis/cmsdata/wmarchive-monthly/201804.txt",
+        "/Volumes/storage/ba-thesis/cmsdata/wmarchive-monthly/201805.txt"
+    ]
+}
