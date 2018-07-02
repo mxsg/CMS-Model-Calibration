@@ -3,6 +3,11 @@ import logging
 import pandas as pd
 
 from .csv import CSVImporter
+from ..data.dataset import JobsAndFilesDataSet
+
+
+# from ..utils import unique_identifier
+# from ..interfaces.filedataimporter import FileDataImporter
 
 
 class JobMonitoringImporter(CSVImporter):
@@ -32,9 +37,11 @@ class JobMonitoringImporter(CSVImporter):
 
         # TODO Make these parameters
         # self.dropped_columns = ['FileName', 'ProtocolUsed']
-        self.dropped_columns = []
+        self.dropped_columns = ['ProtocolUsed', 'IsParentFile', 'FileType']
         self.key_columns = ['JobId', 'StartedRunningTimeStamp', 'FinishedTimeStamp']
-        self.header = 'JobId,FileName,IsParentFile,ProtocolUsed,SuccessFlag,FileType,LumiRanges,StrippedFiles,BlockId,StrippedBlocks,BlockName,InputCollection,Application,ApplicationVersion,Type,GenericType,NewGenericType,NewType,SubmissionTool,InputSE,TargetCE,SiteName,SchedulerName,JobMonitorId,TaskJobId,SchedulerJobIdV2,TaskId,TaskMonitorId,NEventsPerJob,NTaskSteps,JobExecExitCode,JobExecExitTimeStamp,StartedRunningTimeStamp,FinishedTimeStamp,WrapWC,WrapCPU,ExeCPU,NCores,NEvProc,NEvReq,WNHostName,JobType,UserId,GridName'
+
+        self.id_column = 'UniqueID'
+        self.header = 'JobId,FileName,IsParentFile,ProtocolUsed,SuccessFlag,FileType,LumiRanges,StrippedFiles,BlockId,StrippedBlocks,BlockName,InputCollection,Application,ApplicationVersion,Type,GenericType,NewGenericType,NewType,SubmissionTool,InputSE,TargetCE,SiteName,SchedulerName,JobMonitorId,TaskJobId,SchedulerJobIdV2,TaskId,TaskMonitorId,NEventsPerJob,NTaskSteps,JobExecExitCode,JobExecExitTimeStamp,StartedRunningTimeStamp,FinishedTimeStamp,WrapWC,WrapCPU,ExeCPU,NCores,NEvProc,NEvReq,WNHostName,JobType,UserId,GridName,UniqueID'
         self.kept_columns = ['JobId', 'FileName', 'Type', 'GenericType', 'SubmissionTool', 'InputSE',
                              'TaskJobId', 'TaskId', 'TaskMonitorId', 'JobExecExitCode',
                              'JobExecExitTimeStamp', 'StartedRunningTimeStamp', 'FinishedTimeStamp',
@@ -51,7 +58,30 @@ class JobMonitoringImporter(CSVImporter):
 
         df = pd.concat(df_list)
 
-        return self.convert_data(df)
+        df = self.convert_data(df)
+
+        files = df[[self.id_column, 'FileName']]
+        files = files.drop_duplicates().reset_index(drop=True)
+
+        jobs = df.drop(columns='FileName').drop_duplicates(self.id_column).set_index(self.id_column)
+
+        return JobsAndFilesDataSet(jobs, files)
+
+    def import_jobs_files(self, path):
+
+        df_raw = self.read_file(path)
+        df_all = self.convert_data(df_raw)
+
+        files = df_all[[self.id_column, 'FileName']]
+        files = files.drop_duplicates().reset_index()
+
+        jobs = df_all.drop(columns='FileName').drop_duplicates(self.id_column).set_index(self.id_column)
+
+        return JobsAndFilesDataSet(jobs, files)
+
+    # TODO Refactor this!
+    def from_file(self, path):
+        return self.importDataFromFile(path)
 
     def read_file(self, path):
         self.checkHeader(path, self.header)
@@ -63,9 +93,7 @@ class JobMonitoringImporter(CSVImporter):
     def importDataFromFile(self, path):
         logging.info("Reading jobmonitoring file from {}".format(path))
 
-        self.checkHeader(path, self.header)
-
-        df_raw = pd.read_csv(path, sep=',', dtype=self.jm_dtypes)
+        df_raw = self.read_file(path)
 
         logging.debug("Jobmonitoring dtypes:")
         logging.debug(df_raw.dtypes)
@@ -94,9 +122,18 @@ class JobMonitoringImporter(CSVImporter):
         jmdf['TaskMonitorId'] = jmdf['TaskMonitorId'].replace('^wmagent_', '', regex=True)
 
     def convert_data(self, jmdf):
-        # df = df_raw.drop([col for col in self.dropped_columns if col in df_raw.columns], axis='columns')
-        df = jmdf[self.kept_columns].copy()
-        df = df.drop_duplicates()
+        jmdf = jmdf.drop([col for col in self.dropped_columns if col in jmdf.columns], axis='columns')
+        # df = jmdf[self.kept_columns].copy()
+        df = jmdf
+
+        # logging.debug("Creating unique identifier.")
+        # print("unique id creating")
+        # jmdf[self.id_column] = unique_identifier.hash_columns(jmdf, self.key_columns)
+        # print("unique id created")
+        # logging.debug("Unique identifier created.")
+
+        # Use unique identifier to index data frame
+        # df = df.set_index(id_column)
 
         logging.info("Jobmonitoring file with dropped columns with shape: {}".format(df.shape))
         # logging.debug("Number of distinct JobIDs: {}".format(df.JobId.unique().shape))
@@ -137,6 +174,13 @@ class JobMonitoringImporter(CSVImporter):
                           .format(df[df['FinishedTimeStamp'] != df['JobExecExitTimeStamp']].shape[0]))
 
         return df
+
+    def get_file_df(self, jmdf):
+        files = jmdf[[self.id_column, 'FileName']].drop_duplicates().reset_index(drop=True)
+        return files
+
+    def get_job_df(self, jmdf):
+        return jmdf.drop(columns='FileName').drop_duplicates(self.id_column).set_index(self.id_column)
 
     def correct_timestamps(self, jmdf, ts_columns, tz_string='UTC'):
 
