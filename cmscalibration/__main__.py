@@ -1,22 +1,18 @@
 #!/usr/bin/env python3
 
 import logging
+import os
 import sys
 from datetime import datetime
 
 import numpy as np
 import pandas as pd
-
-import configparser
-
-from workflows import debug
-from workflows import sampling_validation
 from utils import config
+from workflows import gridka_calibration
 
 
 def main():
-
-    setupLogger()
+    setup_logging()
 
     conf_path = 'calibration.json'
     param_count = len(sys.argv) - 1
@@ -38,30 +34,32 @@ def main():
         print("Exiting.")
         sys.exit(1)
 
-
-    logging.debug("Starting Model Calibration")
+    logging.debug("Starting Model Calibration.")
 
     logging.debug("Running with Pandas version: {}".format(pd.__version__))
     logging.debug("Running with Numpy version: {}".format(np.__version__))
 
-    sampling_validation.run_workflow()
+    # sampling_validation.run_workflow()
+    gridka_calibration.calibrate_gridka()
 
     logging.debug("Model Calibration Finished")
 
 
-def setupLogger():
+def setup_logging():
     # Setup logging to file and the console
-    log_path = "./log"
+    log_path = "log"
 
     # Log into file with current date and time
     now = datetime.now()
     log_name = "logfile_{}".format(now.strftime('%Y-%m-%d_%H-%M-%S'))
+    log_path = os.path.join(log_path, log_name)
+    os.makedirs(log_path, exist_ok=True)
 
     logging.basicConfig(
         format='%(asctime)s [%(levelname)-5.5s]  %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S',
         handlers=[
-            logging.FileHandler("{0}/{1}.log".format(log_path, log_name)),
+            logging.FileHandler(os.path.join(log_path, log_name)),
             logging.StreamHandler(stream=sys.stdout)
         ],
         level=logging.DEBUG)
