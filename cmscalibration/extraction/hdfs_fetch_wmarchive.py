@@ -12,15 +12,16 @@ def main():
     ssh_host = 'lxplus7.cern.ch'
 
     hdfs_base_path = 'hdfs:///cms/users/mstemmer'
-    hdfs_dataset = 'wmarchive-monthly'
+    hdfs_dataset = 'jobmonitoring-header'
     start_date = '20180101'
     day_count = 61
+    has_header = True
 
     # dates = construct_date_list(start_date, day_count)
-    # dates = ['201801', '201802', '201803', '201804', '201805', '201806']
-    dates = ['201806']
+    dates = ['201801', '201802', '201803', '201804', '201805', '201806']
+    # dates = ['201806']
 
-    output_path = '/Volumes/storage/cmsdata'
+    output_path = '/Volumes/storage/ba-thesis/cmsdata'
     local_parent = os.path.expanduser(os.path.join(output_path, hdfs_dataset))
 
     print("Local parent directory: {}".format(local_parent))
@@ -44,7 +45,30 @@ def main():
 
         call(ssh_command, shell=True)
 
+        # Remove header lines
+        if has_header:
+            filter_file_header(local_path)
+
         print("Completed date {}".format(date))
+
+
+def filter_file_header(path):
+    path_dir, file_name = os.path.split(path)
+
+    with open(path, 'r') as infile:
+        header = infile.readline()
+
+        temp_name = '_tempfile_{}'.format(file_name)
+        temp_path = os.path.join(path_dir, temp_name)
+        with open(temp_path, 'w') as outfile:
+            outfile.write(header)
+
+            for line in infile:
+                if line != header:
+                    outfile.write(line)
+
+    # Replace original file
+    os.replace(temp_path, path)
 
 
 def construct_date_list(start=None, num=1):
