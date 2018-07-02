@@ -6,6 +6,13 @@ import pandas as pd
 
 class WMArchiveSummarizedImporter:
 
+    def from_file(self, path):
+        return self.import_from_json(path)
+
+    def from_file_list(self, path_list):
+        df_list = [self.from_file(path) for path in path_list]
+        return pd.concat(df_list).drop_duplicates('wmaid')
+
     def import_from_json(self, path):
         logging.info("Reading WMArchive file from {}.".format(path))
 
@@ -21,7 +28,14 @@ class WMArchiveSummarizedImporter:
 
         with open(path) as f:
             for line in f:
-                record = ast.literal_eval(line)
+                # Todo Catch exceptions here!
+                try:
+                    record = ast.literal_eval(line)
+                except ValueError as e:
+                    print("Invalid entry found, continuing. Entry: \n{}".format(line))
+                    print(str(e))
+                    continue
+
                 data.append(record)
 
         wmdf = pd.DataFrame(data).drop_duplicates('wmaid')
