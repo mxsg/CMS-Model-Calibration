@@ -1,16 +1,25 @@
-from analysis import nodeanalysis
 from exporters import nodetypes
-from merge import job_node
 from importers.jobmonitoring import JobMonitoringImporter
 from importers.nodedata import GridKaNodeDataImporter
+from merge import job_node
+import logging
+
+from analysis import nodeanalysis
+from importers.dataset import DatasetImporter
+from utils import config
 
 
-def calibrateGridKaModel():
-    jm_importer = JobMonitoringImporter()
-    jobs = jm_importer.importDataFromFile('./data/jobmonitoring-20180401.txt')
+def calibrate_gridka():
+    logging.debug("Start calibration for GridKa model.")
 
-    node_importer = GridKaNodeDataImporter()
-    nodes = node_importer.importDataFromFile('./data/gridka-benchmarks-2017.csv')
+    # Timezone correction correct for errors in timestamps of JobMonitoring data
+    dataset_importer = DatasetImporter(JobMonitoringImporter(timezone_correction='Europe/Berlin'))
+
+    jm_dataset = dataset_importer.import_dataset(config.jm_input_dataset, config.start_date, config.end_date)
+    # jobs = jm_dataset.jobs
+    # files = jm_dataset.files
+
+    nodes = GridKaNodeDataImporter().importDataFromFile(config.node_info)
 
     nodeanalysis.addPerformanceData(nodes)
     node_types = nodeanalysis.extractNodeTypes(nodes)
@@ -21,4 +30,3 @@ def calibrateGridKaModel():
     nodetypes.exportToJsonFile(scaled_nodes, './out/nodes.json')
 
     matched_jobs = job_node.match_jobs_to_node(jobs, nodes)
-
