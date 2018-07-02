@@ -3,6 +3,18 @@ import logging
 import pandas as pd
 
 
+# class JobReportMatcher:
+#     def __init__(self, timestamp_tolerance=0):
+#         self._timestamp_tolerance = timestamp_tolerance
+#
+#     def match(self, jm_dataset, wm_dataset):
+
+
+def match_on_cputime(jm_dataset, wm_dataset):
+    jmdf = jm_dataset.jobs
+    wmdf = wm_dataset.jobs
+
+
 def match_jobs(jmdf, wmdf):
     # split_keys = ['TaskMonitorId', 'WNHostName']
     split_key = 'TaskMonitorId'
@@ -24,10 +36,12 @@ def match_jobs(jmdf, wmdf):
     wmdf = wmdf[wmdf['stopTime'].notnull()].copy()
 
     jmdf['jmdfStopDay'] = jmdf['JobExecExitTimeStamp'].dt.normalize()
+    jmdf['jmdfStopHour'] = jmdf['JobExecExitTimeStamp'].dt.hour
     wmdf['wmdfStopDay'] = wmdf['stopTime'].dt.normalize()
+    wmdf['wmdfStopHour'] = wmdf['stopTime'].dt.hour
 
     print("Splitting into groups by day and TaskMonitorId")
-    groups = split_with_keys(jmdf, ['jmdfStopDay', split_key])
+    groups = split_with_keys(jmdf, ['jmdfStopDay', 'jmdfStopHour'])
 
     match_df_list = []
     print("Number of groups to match: {}".format(len(groups)))
@@ -37,14 +51,15 @@ def match_jobs(jmdf, wmdf):
 
     for group_keys, group_jmdf in groups:
         print("Matching group with {} entries".format(len(group_jmdf)))
-        group_wmdf = wmdf[(wmdf['wmdfStopDay'] == group_keys[0]) & (wmdf['TaskMonitorId'] == group_keys[1])]
+        # group_wmdf = wmdf[(wmdf['wmdfStopDay'] == group_keys[0]) & (wmdf['wmdfStopDay'] == group_keys[0]) & (wmdf['TaskMonitorId'] == group_keys[1])]
+        group_wmdf = wmdf[(wmdf['wmdfStopDay'] == group_keys[0]) & (wmdf['wmdfStopDay'] == group_keys[0])]
         # group_wmdf = wmdf[wmdf['TaskMonitorId'] == group_key]
         #
         # print("matching group lengths: wmdf {}, jmdf {}".format(group_wmdf.shape[0], group_jmdf.shape[0]))
         matches = match_on_files(group_jmdf, group_wmdf)
         # print("{} matches found".format(matches.shape[0]))
         matched += group_jmdf.shape[0]
-        print("Total matched {}, to be done {} ({} %)".format(matched, to_match, matched/to_match*100))
+        print("Total matched {}, to be done {} ({} %)".format(matched, to_match, matched / to_match * 100))
         match_df_list.append(match_on_files(group_jmdf, group_wmdf))
 
     file_matches = pd.concat(match_df_list)
@@ -59,13 +74,26 @@ def subset_day(df, column, timestamp):
     return df[(df[column] >= day) & (df[column] < next_day)]
 
 
+def split_by_datetime(df, column, timestamps, freq='D'):
+    sorted_timestamps = sorted(timestamps)
+    first_datetime = sorted_timestamps[0]
+    last_datetime = sorted_timestamps[-1]
+
+    # dates = pd.date_range
+
+    null_values = df[df[column].isnull()]
+    before_first = df[df[column] < first_datetime]
+    after_last = df[df[column] > last_datetime]
+
+
 def prepare_matching(jmdf, wmdf):
     logging.debug("Matching data frames, jmdf with {} entries, wma {}.".format(jmdf.shape[0], wmdf.shape[0]))
     jmdf = jmdf.copy()
     wmdf = wmdf.copy()
 
     # Subset data from JobMonitoring to only include jobs submitted by WMAgent
-    jmdf = jmdf[jmdf['SubmissionTool'] == 'wmagent']
+    # TODO Add this again!
+    # jmdf = jmdf[jmdf['SubmissionTool'] == 'wmagent']
 
     preprocess_jm(jmdf)
 
@@ -74,10 +102,12 @@ def prepare_matching(jmdf, wmdf):
     wmdf.set_index(wmdf_key, inplace=True)
     wmdf[wmdf_key] = wmdf.index
 
+    wmdf['wmaWrapCPU'] = wmdf.apply(lambda x: x['performance'].get('cpu').get('TotalJobCPU') if x['performance'] is not None else None,
+                                    axis=1)
+
     # Keep the last row, as it the one that ran the longest
     # jmdf = jmdf.drop_duplicates(jmdf_key, keep='last')
     return jmdf, wmdf
-
 
 def match_on_files(jmdf, wmdf):
     jmdf_file_col = 'FileName'
@@ -95,7 +125,8 @@ def match_on_files(jmdf, wmdf):
     # TODO Make this generic for general timestamps
     def filter_distinct_matches(group):
         filter_threshold = 20
-        group = group[abs((group['startTime'] - group['StartedRunningTimeStamp']).dt.total_seconds()) < filter_threshold]
+        group = group[
+            abs((group['startTime'] - group['StartedRunningTimeStamp']).dt.total_seconds()) < filter_threshold]
         group = group[abs((group['stopTime'] - group['JobExecExitTimeStamp']).dt.total_seconds()) < filter_threshold]
         return group
 
@@ -110,33 +141,6 @@ def match_on_files(jmdf, wmdf):
     else:
         return perfect_matches[['JobId', 'wmaid']]
 
-
-    # TODO Make this generic for general timestamps
-    # file_matches['startTimeDiff'] = file_matches.apply(lambda x: abs((x['startTime'] - x['StartedRunningTimeStamp']).total_seconds()), axis=1)
-    # file_matches['stopTimeDiff'] = file_matches.apply(lambda x: abs((x['stopTime'] - x['JobExecExitTimeStamp']).total_seconds()), axis=1)
-    # print(file_matches)
-
-    # file_matches['startTimeDiff'] = file_matches.apply(
-    #     lambda x: abs_time_diff(x['startTime'], x['StartedRunningTimeStamp']), axis=1)
-    # file_matches['stopTimeDiff'] = file_matches.apply(lambda x: abs_time_diff(x['stopTime'], x['JobExecExitTimeStamp']),
-    #                                                   axis=1)
-
-    # print(file_matches)
-
-    # Filter via time stamps
-    # filtered_matches = file_matches[(file_matches['startTimeDiff'] <= 20) & (file_matches['stopTimeDiff'] <= 20)]
-    #
-    # matches_per_wmaid = filtered_matches.groupby('wmaid')['JobId'].nunique()
-    # single_wmaid_matches = matches_per_wmaid[matches_per_wmaid == 1].index
-    #
-    # matches_per_jobid = filtered_matches.groupby('JobId')['wmaid'].nunique()
-    # single_jobid_matches = matches_per_jobid[matches_per_jobid == 1]
-    #
-    # single_wmaid_multiple_jobids = \
-    #     file_matches.loc[file_matches['wmaid'].isin(single_wmaid_matches)].drop(columns='FileName').drop_duplicates()
-    #
-    # perfect_matches = single_wmaid_multiple_jobids[
-    #     single_wmaid_multiple_jobids['JobId'].isin(single_jobid_matches.index)]
 
 def match_on_metadata(jmdf, wmdf):
     pass
