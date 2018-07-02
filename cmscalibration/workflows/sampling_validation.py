@@ -35,6 +35,8 @@ def run_workflow():
 
     job_data = jobmonitoring.add_performance_data(matched_jobs)
 
+
+
     cpu_efficiency = cpuefficiency.cpu_efficiency(job_data)
     logging.info("Total CPU time / Walltime efficiency: {}".format(cpu_efficiency))
     cpu_efficiency_scaled = cpuefficiency.cpu_efficiency_scaled_by_jobslots(job_data)
@@ -66,6 +68,9 @@ def run_workflow():
     cms_avg_cores = mean_core_share_in_timeframe['CMSCores']
 
     logging.info("Mean number of slots for CMS: {}".format(cms_avg_cores))
+
+
+
 
     node_types = nodeanalysis.extractNodeTypes(nodes)
     scaled_nodes = nodeanalysis.scale_site_to_jobslot_count(node_types, cms_avg_cores)
@@ -149,7 +154,7 @@ def run_workflow():
                                                                                                    end_date,
                                                                                                    cpu_efficiency_data))
 
-    sample_shares = [0.1, 0.2, 0.4, 0.5, 0.6, 0.8, 0.9]
+    sample_shares = [0.5]
 
     for sample_share in sample_shares:
         out_share_dir = os.path.join(out_parent, "share_{}".format(sample_share))
