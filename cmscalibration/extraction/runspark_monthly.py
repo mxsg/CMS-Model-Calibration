@@ -1,8 +1,7 @@
-import os
-from subprocess import call
-import time
-import datetime
 import calendar
+import datetime
+from subprocess import call
+
 
 def main():
     ssh_setup_commands = ['source analytix/setup.sh']
@@ -10,13 +9,13 @@ def main():
     ssh_analytix_host = 'analytix'
 
     hdfs_base_path = 'hdfs:///cms/users/mstemmer'
-    hdfs_dataset = 'jobmonitoring-monthly-remote-test'
+    hdfs_dataset = 'jobmonitoring-header'
 
     cmsspark_script = 'gridka_jm.py'
 
     start_year = 2018
     start_month = 1
-    num_months = 1
+    num_months = 6
 
     for i in range(num_months):
         year = start_year + (start_month + i - 1) // 12
@@ -33,7 +32,7 @@ def main():
         analytix_command = ' ; '.join(ssh_setup_commands + [spark_command])
 
         ssh_inner_command = 'ssh {} "{}"'.format(ssh_analytix_host, analytix_command)
-        ssh_command ='ssh {} \'{}\''.format(ssh_host, ssh_inner_command)
+        ssh_command = 'ssh {} \'{}\''.format(ssh_host, ssh_inner_command)
         print("Full command: {}".format(ssh_command))
 
         call(ssh_command, shell=True)
@@ -42,7 +41,7 @@ def main():
 def dates_for_month(year, month):
     # Returns a tuple with the weekday of the first day and the number of days
     num_days = calendar.monthrange(year, month)[1]
-    return [datetime.date(year, month, day) for day in range(1, num_days+1)]
+    return [datetime.date(year, month, day) for day in range(1, num_days + 1)]
 
 
 # def construct_date_list(start, num=1):
