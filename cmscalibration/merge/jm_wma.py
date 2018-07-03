@@ -10,9 +10,18 @@ import pandas as pd
 #     def match(self, jm_dataset, wm_dataset):
 
 
-def match_on_cputime(jm_dataset, wm_dataset):
-    jmdf = jm_dataset.jobs
-    wmdf = wm_dataset.jobs
+def match_on_cputime(jmdf, wmdf):
+    jmdf = jmdf.copy()
+    wmdf = wmdf.copy()
+
+    jmdf['WrapCPUApprox'] = jmdf['WrapCPU'].round()
+    wmdf['wmaWrapCPUApprox'] = wmdf['wmaWrapCPU'].round()
+
+    matches = jmdf.reset_index().merge(wmdf.reset_index(), left_on='WrapCPUApprox', right_on='wmaWrapCPUApprox')
+
+    perfect_matches = matches.groupby('UniqueID').filter(lambda x: len(x) == 1)
+
+    return perfect_matches[['UniqueID', 'wmaid']]
 
 
 def match_jobs(jmdf, wmdf):
@@ -74,16 +83,56 @@ def subset_day(df, column, timestamp):
     return df[(df[column] >= day) & (df[column] < next_day)]
 
 
-def split_by_datetime(df, column, timestamps, freq='D'):
-    sorted_timestamps = sorted(timestamps)
-    first_datetime = sorted_timestamps[0]
-    last_datetime = sorted_timestamps[-1]
+def split_by_datetime(left, right, left_col, right_col, freq='H'):
+    pass
 
-    # dates = pd.date_range
 
-    null_values = df[df[column].isnull()]
-    before_first = df[df[column] < first_datetime]
-    after_last = df[df[column] > last_datetime]
+# def split_by_datetime(df, column, timestamps, freq='D'):
+#     sorted_timestamps = sorted(timestamps)
+#     first_datetime = sorted_timestamps[0]
+#     last_datetime = sorted_timestamps[-1]
+#
+#     # dates = pd.date_range
+#
+#     null_values = df[df[column].isnull()]
+#     before_first = df[df[column] < first_datetime]
+#     after_last = df[df[column] > last_datetime]
+
+# def split_by_datetime(df, column, timestamps, freq='D'):
+#
+#     total_entries = df.shape[0]
+#     current_count = 0
+#
+#     groups = []
+#
+#     null_values = df[df[column].isnull()]
+#     df = df[df[column].notnull()]
+#     groups.append(null_values)
+#
+#     for timestamp in timestamps:
+#         new_group = df[df[column] < ]
+#
+#     before_first = df[df[column] < cuts[0]]
+#     after_last = df[df[column] >= cuts[-1]]
+#
+#     if not null_values.empty:
+#         current_count += null_values.shape[0]
+#         yield null_values
+#
+#     if not before_first.empty:
+#         current_count += null_values.shape[0]
+#         yield before_first
+#
+#
+#     if not after_last.empty:
+#         current_count += after_last.shape[0]
+#         yield after_last
+#
+#     for (first)
+#
+#     datetimes = pdf.date_range(first_date, last_date)
+#
+#     df_list = [df[]]
 
 
 def prepare_matching(jmdf, wmdf):
@@ -102,12 +151,44 @@ def prepare_matching(jmdf, wmdf):
     wmdf.set_index(wmdf_key, inplace=True)
     wmdf[wmdf_key] = wmdf.index
 
-    wmdf['wmaWrapCPU'] = wmdf.apply(lambda x: x['performance'].get('cpu').get('TotalJobCPU') if x['performance'] is not None else None,
-                                    axis=1)
+    wmdf['wmaWrapCPU'] = wmdf.apply(
+        lambda x: x['performance'].get('cpu').get('TotalJobCPU') if x['performance'] is not None else None,
+        axis=1)
 
     # Keep the last row, as it the one that ran the longest
     # jmdf = jmdf.drop_duplicates(jmdf_key, keep='last')
     return jmdf, wmdf
+
+
+def match_cpu_time(jmdf, wmdf):
+    pass
+
+
+def match_files(jmdf_files, wmdf_files):
+    if jmdf_files.shape[0] == 0 or wmdf_files.shape[0] == 0:
+        return pd.DataFrame()
+
+    file_matches = jmdf_files.merge(wmdf_files, on='FileName')
+
+    if file_matches.empty:
+        return pd.DataFrame()
+
+    possible_matches = file_matches.drop(columns='FileName').drop_duplicates()
+    grouped = possible_matches.groupby(possible_matches.index)
+
+    def filter_distinct_matches(group):
+        filter_threshold = 20
+        group = group[
+            abs((group['startTime'] - group['StartedRunningTimeStamp']).dt.total_seconds()) < filter_threshold]
+        group = group[abs((group['stopTime'] - group['JobExecExitTimeStamp']).dt.total_seconds()) < filter_threshold]
+        return group
+
+    filtered_matches = grouped.apply(filter_distinct_matches)
+    print(filtered_matches)
+
+    perfect_matches = filtered_matches.groupby(filtered_matches.index).filter(lambda x: len(x) == 1)
+    return perfect_matches
+
 
 def match_on_files(jmdf, wmdf):
     jmdf_file_col = 'FileName'
