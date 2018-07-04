@@ -1,0 +1,8 @@
+{
+    "start_date": "2018-06-25",
+    "end_date": "2018-06-26",
+    "jm_input_dataset": "/Users/msg/Studium/ba-thesis/CMS-Model-Calibration/data/20180625/jm-dataset.json",
+    "wm_input_dataset": "/Users/msg/Studium/ba-thesis/CMS-Model-Calibration/data/20180625/wm-dataset.json",
+    "node_info": "data/gridka-benchmarks-2017.csv",
+    "output_directory": "out"
+}

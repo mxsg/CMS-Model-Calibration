@@ -1,8 +1,8 @@
 {
-    "start_date": "2018-04-01",
-    "end_date": "2018-06-01",
+    "start_date": "2018-01-01",
+    "end_date": "2018-02-01",
     "jm_input_dataset": "/Volumes/storage/ba-thesis/cmsdata/jobmonitoring-header/jm-dataset.json",
-    "wma_input_dataset": "/Volumes/storage/ba-thesis/cmsdata/wmarchive-monthly/jm-dataset.json",
-    "node_info": "./data/gridka-benchmarks-2017.csv",
-    "output_directory": "./out"
+    "wm_input_dataset": "/Volumes/storage/ba-thesis/cmsdata/wmarchive-flattened-events/wm-dataset.json",
+    "node_info": "data/gridka-benchmarks-2017.csv",
+    "output_directory": "out"
 }
