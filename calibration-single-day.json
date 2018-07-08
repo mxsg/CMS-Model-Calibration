@@ -4,5 +4,6 @@
     "jm_input_dataset": "/Users/msg/Studium/ba-thesis/CMS-Model-Calibration/data/20180625/jm-dataset.json",
     "wm_input_dataset": "/Users/msg/Studium/ba-thesis/CMS-Model-Calibration/data/20180625/wm-dataset.json",
     "node_info": "data/gridka-benchmarks-2017.csv",
-    "output_directory": "out"
+    "output_directory": "out",
+    "workflow_module": "workflows.sampling_validation"
 }
