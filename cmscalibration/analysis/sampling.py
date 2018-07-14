@@ -1,6 +1,5 @@
 def split_samples(df, frac=0.5, random_state=None):
-    """
-    Splits the data frame into two parts where the first is about the supplied fraction
+    """Split the data frame into two parts where the first is about the supplied fraction
     of the total size of the data frame.
     """
 
@@ -10,5 +9,4 @@ def split_samples(df, frac=0.5, random_state=None):
         train = df.sample(frac, random_state=random_state)
 
     test = df.drop(train.index)
-
     return train, test

@@ -4,6 +4,10 @@ import pandas as pd
 
 
 def match_jobs_to_node(jobs: pd.DataFrame, nodes: pd.DataFrame):
+    """Match job information to node performance information and return a dataframe that contains the union of
+    the previous columns.
+    """
+
     all_job_nodes = jobs.HostName.unique()
     available_hosts = nodes.hostname.unique()
 
@@ -19,7 +23,8 @@ def match_jobs_to_node(jobs: pd.DataFrame, nodes: pd.DataFrame):
 
     logging.debug("Number of jobs per unmatched job node:")
     # Retrieve number of jobs that cannot be matched
-    logging.debug(", ".join(["node: {}, jobs: {}".format(node, jobs[jobs['HostName'] == node].shape[0]) for node in unmatched_job_nodes]))
+    logging.debug(", ".join(
+        ["node: {}, jobs: {}".format(node, jobs[jobs['HostName'] == node].shape[0]) for node in unmatched_job_nodes]))
 
     logging.debug("Found {} nodes without jobs.".format(len(nodes_without_jobs)))
 

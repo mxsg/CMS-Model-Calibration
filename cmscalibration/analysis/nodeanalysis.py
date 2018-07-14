@@ -4,6 +4,8 @@ import numpy as np
 
 
 def add_performance_data(df):
+    """Add performance information to a dataframe containing node information."""
+
     df['HSScorePerCore'] = df['hs06'] / df['cores']
     df['HSScorePerJobslot'] = df['hs06'] / df['jobslots']
 
@@ -13,19 +15,24 @@ def add_performance_data(df):
     df['coresLogical'] = df.apply(lambda x: logical_cores(x['cores'], x['jobslots']), axis='columns')
 
 
-def extract_node_types(df):
-    # columns that the data have to be grouped by to retrieve the different node types
-    grouped_cols = ['cpu model',
-                    'jobslots',
-                    'hs06',
-                    'cores',
-                    'interconnect',
-                    'HSScorePerCore',
-                    'HSScorePerJobslot']
+def extract_node_types(df, grouped_cols=None):
+    """Group the nodes from the datarame into groups by comparing the column values
+    from the grouped_columns parameter.
+    """
 
-    nodeTypes = df[grouped_cols + ['hostname']].groupby(grouped_cols, as_index=False)
+    # Columns that the data have to be grouped by to retrieve the different node types
+    if grouped_cols is None:
+        grouped_cols = ['cpu model',
+                        'jobslots',
+                        'hs06',
+                        'cores',
+                        'interconnect',
+                        'HSScorePerCore',
+                        'HSScorePerJobslot']
 
-    node_summary = nodeTypes.count()
+    node_types = df[grouped_cols + ['hostname']].groupby(grouped_cols, as_index=False)
+
+    node_summary = node_types.count()
     node_summary.rename(columns={'hostname': 'nodeCount',
                                  'cpu model': 'name',
                                  'HSScorePerCore': 'computingRatePerCore',
@@ -44,6 +51,8 @@ def extract_node_types(df):
 
 
 def add_logical_core_count(df):
+    """Add a column containing the logical number of cores to the dataframe."""
+
     def logical_cores(physical_cores, jobslots):
         return 2 * physical_cores if jobslots > physical_cores else physical_cores
 
@@ -75,7 +84,6 @@ def scale_site_by_benchmark(df, share, method='score'):
     if not method == 'score':
         raise ValueError('unknown scaling method')
 
-    # TODO Replace these with generic values
     benchmark_score_col = 'hs06'
     node_count_col = 'nodeCount'
 

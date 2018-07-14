@@ -8,6 +8,8 @@ cpu_time_per_core = Metric.CPU_TIME_PER_CORE
 
 
 def cpu_efficiency(df, include_zero_cpu=False):
+    """Compute the CPU efficiency from a data frame containing job monitoring information."""
+
     df_filtered = df[df[wrap_wc] > 0]
 
     if include_zero_cpu:
@@ -23,6 +25,9 @@ def cpu_efficiency(df, include_zero_cpu=False):
 
 
 def cpu_efficiency_scaled_by_jobslots(df, include_zero_cpu=False, physical=False):
+    """Compute the CPU efficiency from a data frame containing job monitoring information,
+    but scale the result with the number of jobslots available in the node, either with physical or logical cores.
+    """
     df_filtered = df[df[wrap_wc] > 0]
 
     if include_zero_cpu:

@@ -10,8 +10,10 @@ from utils.report import ReportingEntity
 
 
 class JMImporter(ReportingEntity, MultiFileDataImporter):
+    """Instances of this class allow the import of JobMonitoring data."""
 
     # TODO Split this up into required and optional columns to be more flexible
+
     jm_dtypes = {
         'JobId': int,
         'FileName': str,
@@ -97,6 +99,8 @@ class JMImporter(ReportingEntity, MultiFileDataImporter):
         return job_dataset
 
     def filter_with_date_range(self, dataset, start_date, end_date):
+        """Filter the data in the supplied dataset to only contain data within the provided time frame."""
+
         jobs = dataset.df
 
         # Filter entries based on jobs' stop date

@@ -152,7 +152,7 @@ class SummarizedWMAImporter(MultiFileDataImporter):
         logging.info("Reading WMArchive file from {}.".format(path))
 
         wmdf = pd.read_json(path, lines=True)
-        self.convert_columns(wmdf)
+        self._convert_columns(wmdf)
         return wmdf
 
     def _get_file_table(self, wmdf, additional_cols=None):

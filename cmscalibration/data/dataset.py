@@ -30,6 +30,9 @@ class Metric(Enum):
     TOTAL_WRITE_MB = 'TotalWriteMB'
 
     CPU_EFFICIENCY = 'CPUEfficiency'
+    OVERALL_CPU_EFFICIENCY = 'OverallJobCPUEfficiency'
+    CPU_IDLE_TIME = 'CPUIdleTime'
+    CPU_IDLE_TIME_RATIO = 'CPUIdleTimeRatio'
 
     # Time stamps
     START_TIME = 'StartTime'
@@ -49,7 +52,10 @@ class Metric(Enum):
 
 class Dataset:
     """A dataset is a data frame with additional information associated with it. Besides the main data frame itself,
-    it is named, has a time period the data is valid for and can contain additional data frames as associated info."""
+    it is named, has a time period the data is valid for and can contain additional data frames as associated info.
+
+    A dataset can also contain sections of columns which belong together (e.g. originally come from the same dataset).
+    """
 
     def __init__(self, df, name='dataset', start=None, end=None, sep='#', extra_dfs=None):
         self.df = df
@@ -65,6 +71,7 @@ class Dataset:
 
     @property
     def sections(self):
+        """Return the sections that are present in this dataset."""
         if not self.df:
             return []
 
@@ -76,6 +83,7 @@ class Dataset:
 
     @property
     def metrics(self):
+        """Return all metrics present in this dataset."""
         if not self.df:
             return []
 
@@ -91,6 +99,7 @@ class Dataset:
         return sorted(list(set(metrics)))
 
     def cols_for_section(self, section=''):
+        """Return the columns which are present in a specific section of the dataset."""
         # Filter all column names that contain the section name
         if not section:
             filtered_colnames = [colname for colname in self.df.columns if not colname.contains(self.sep)]
@@ -100,6 +109,7 @@ class Dataset:
         return filtered_colnames
 
     def col(self, metric, section=None):
+        """Return the column for the supplied metric from the dataframe."""
         if not section:
             colname = metric.value
         else:

@@ -2,16 +2,20 @@ import logging
 
 import numpy as np
 
+from data.dataset import Metric
+
 
 def add_jobmonitoring_performance_data(df):
-    wrap_cpu = 'CPUTime'
-    wrap_wc = 'WallTime'
-    job_type = 'JobType'
-    core_count = 'UsedCores'
+    """Add performance information to a dataframe containing JobMonitoring job data."""
 
-    cpu_idle_time = 'CPUIdleTime'
-    job_cpu_efficiency = 'OverallJobCPUEfficiency'
-    cpu_idle_time_ratio = 'CPUIdleTimeRatio'
+    wrap_cpu = Metric.CPU_TIME.value
+    wrap_wc = Metric.WALL_TIME.value
+    job_type = Metric.JOB_TYPE.value
+    core_count = Metric.USED_CORES.value
+
+    cpu_idle_time = Metric.CPU_IDLE_TIME.value
+    job_cpu_efficiency = Metric.OVERALL_CPU_EFFICIENCY.value
+    cpu_idle_time_ratio = Metric.CPU_IDLE_TIME_RATIO.value
 
     job_data = df.copy()
 

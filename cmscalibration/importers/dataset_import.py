@@ -48,10 +48,14 @@ class DatasetDescription:
 
 
 class DatasetImporter:
+    """Instances of this class can be used to import datasets consisting of multiple files with data."""
+
     def __init__(self, file_data_importer: MultiFileDataImporter):
         self._importer = file_data_importer
 
     def import_dataset(self, dataset_description_path, start_date, end_date):
+        """Import data from a dataset, only importing files that intersect with the supplied time frame."""
+
         base_path = os.path.dirname(dataset_description_path)
 
         description = DatasetDescription(dataset_description_path)

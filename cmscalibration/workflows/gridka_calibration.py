@@ -1,7 +1,7 @@
 import logging
 import os
-
 from datetime import datetime
+
 import numpy as np
 import pandas as pd
 
@@ -10,20 +10,18 @@ from analysis import demandextraction, calibrationreport, cpuefficiency
 from analysis import jobreportanalysis
 from analysis import nodeanalysis
 from analysis import sampling
-from exporters import demandexport
-from exporters.nodetypes import NodeTypeExporter
-from importers.gridkadata import CPUEfficienciesImporter, GridKaNodeDataImporter, CoreUsageImporter
+from data.dataset import Metric
+from exporters.datasetexport import NodeTypeExporter, DemandExporter
 from importers.dataset_import import DatasetImporter
+from importers.gridkadata import CPUEfficienciesImporter, GridKaNodeDataImporter, CoreUsageImporter
 from importers.jmimport import JMImporter
 from importers.wmaimport import SummarizedWMAImporter
-from data.dataset import Metric
 from merge import job_node
 from utils import config
 from utils.report import ReportBuilder
 
 
 def run():
-
     report = ReportBuilder(base_path=config.output_directory, filename='calibration-report.md')
 
     report.append('# GridKa Calibration Run')
@@ -84,12 +82,8 @@ def run():
 
     logging.info("Mean number of slots for CMS: {}".format(cms_avg_cores))
 
-
-
-
     node_types = nodeanalysis.extract_node_types(nodes)
     scaled_nodes = nodeanalysis.scale_site_by_jobslots(node_types, cms_avg_cores)
-    # scaled_nodes = nodeanalysis.scaleSiteWithNodeTypes(node_types, 0.20)
 
     cpu_eff_importer = CPUEfficienciesImporter()
     cpu_eff_df = cpu_eff_importer.import_file('./data/gridka_cpu_over_walltime.csv', config.start_date, config.end_date)
@@ -122,58 +116,14 @@ def run():
 
     demands = demandextraction.extract_job_demands(job_subset)
 
-
     # Write jobs to report
     perf_jobs_dataset = jm_dataset
     perf_jobs_dataset.df = job_subset
-
     calibrationreport.add_jobs_report_section(perf_jobs_dataset, report)
-
-    # TODO Refactor this into its own method!
-    day_count = (end_date - start_date).days
-
-    summary = job_subset.groupby(Metric.JOB_TYPE.value).size().reset_index()
-    summary.columns = ['Type', 'Count']
-    summary['countPerDay'] = summary['Count'] / day_count
-    summary['relFrequency'] = summary['Count'] / summary['Count'].sum()
 
     filename = os.path.join(out_directory, 'jobs.json')
     os.makedirs(os.path.dirname(filename), exist_ok=True)
-    demandexport.export_to_json_file(demands, filename)
-
-    filename = os.path.join(out_directory, info_file)
-    os.makedirs(os.path.dirname(filename), exist_ok=True)
-    with open(filename, 'w') as file:
-        file.write("Jobs between {} and {}\n".format(start_date, end_date))
-        file.write("\n")
-
-        file.write("Job types (all types):\n")
-        file.write(summary.to_string() + "\n")
-        file.write("\n")
-
-        file.write("Total jobs: {}\n".format(job_subset.shape[0]))
-        file.write("Total days: {}\n".format(day_count))
-        file.write("Jobs per day: {}\n".format(summary['countPerDay'].sum()))
-        file.write("\n")
-
-        cpu_efficiency = cpuefficiency.cpu_efficiency(job_subset)
-        cpu_efficiency_scaled = cpuefficiency.cpu_efficiency_scaled_by_jobslots(job_subset)
-        cpu_efficiency_scaled_physical = cpuefficiency.cpu_efficiency_scaled_by_jobslots(job_subset, physical=True)
-
-        file.write("## Data from job reports:\n")
-        file.write("Total CPU time / Walltime efficiency: {}\n".format(cpu_efficiency))
-        file.write("Total CPU time / Walltime efficiency scaled by jobslot count and virtual cores: {}\n".format(
-            cpu_efficiency_scaled))
-        file.write("Total CPU time / Walltime efficiency scaled by jobslot count and physical cores: {}\n".format(
-            cpu_efficiency_scaled_physical))
-        file.write("Mean number of pilot slots for CMS: {}\n".format(cms_avg_cores))
-        file.write("\n")
-
-        file.write("## Data from other sources (FULL data set):\n")
-        file.write(
-            "Total CPU Efficiency from {} to {} (from GridKa perspective, with Pilots): {}".format(start_date,
-                                                                                                   end_date,
-                                                                                                   cpu_efficiency_data))
+    DemandExporter().export_to_json_file(demands, filename)
 
     sample_shares = [0.5]
 
@@ -219,7 +169,7 @@ def run():
 
             filename = os.path.join(out_subdirectory, 'jobs.json')
             os.makedirs(os.path.dirname(filename), exist_ok=True)
-            demandexport.export_to_json_file(demands, filename)
+            DemandExporter().export_to_json_file(demands, filename)
 
             sample_share = sample_job_count / job_subset.shape[0]
 
@@ -253,7 +203,8 @@ def run():
 
                 cpu_efficiency = cpuefficiency.cpu_efficiency(job_subset)
                 cpu_efficiency_scaled = cpuefficiency.cpu_efficiency_scaled_by_jobslots(job_subset)
-                cpu_efficiency_scaled_physical = cpuefficiency.cpu_efficiency_scaled_by_jobslots(job_subset, physical=True)
+                cpu_efficiency_scaled_physical = cpuefficiency.cpu_efficiency_scaled_by_jobslots(job_subset,
+                                                                                                 physical=True)
 
                 file.write("## Data from job reports (FULL data set):\n")
                 file.write("Total CPU time / Walltime efficiency: {}\n".format(cpu_efficiency))

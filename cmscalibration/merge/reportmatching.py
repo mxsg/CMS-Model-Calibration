@@ -50,8 +50,8 @@ class JobReportMatcher:
         logging.debug("Removed {} workflows not present in Jobmonitoring data.".format(len(only_jm)))
 
         # Group by set frequency to simplify matching.
-        jm_grouped = self.group_by_time(unmatched_jmdf, [jmset.col(Metric.STOP_TIME)], freq=self.time_grouping_freq)
-        wm_grouped = self.group_by_time(unmatched_wmdf, [wmset.col(Metric.STOP_TIME)], freq=self.time_grouping_freq)
+        jm_grouped = self._group_by_time(unmatched_jmdf, [jmset.col(Metric.STOP_TIME)], freq=self.time_grouping_freq)
+        wm_grouped = self._group_by_time(unmatched_wmdf, [wmset.col(Metric.STOP_TIME)], freq=self.time_grouping_freq)
 
         match_list = []
         total_compared = 0
@@ -67,7 +67,7 @@ class JobReportMatcher:
             if jm_group.empty or wm_group.empty:
                 continue
 
-            group_matches = self.match_on_cpu_time(jmset, wmset, jm_group, wm_group)
+            group_matches = self._match_on_cpu_time(jmset, wmset, jm_group, wm_group)
             match_list.append(group_matches)
 
             total_compared += len(jm_group)
@@ -94,7 +94,7 @@ class JobReportMatcher:
         if use_files and 'files' in jmset.extra_dfs and 'files' in jmset.extra_dfs:
             logging.info("Matching on files.")
 
-            file_matches = self.match_on_files(jmset, wmset, unmatched_jmdf, unmatched_wmdf)
+            file_matches = self._match_on_files(jmset, wmset, unmatched_jmdf, unmatched_wmdf)
             matches = matches.append(file_matches)
 
             unmatched_jmdf = unmatched_jmdf.drop(matches[unmatched_jmdf.index.name], errors='ignore')
@@ -110,7 +110,7 @@ class JobReportMatcher:
 
         return matches.reset_index(drop=True)
 
-    def filter_matches(self, matches, jm_dataset: Dataset, wm_dataset, jmdf_prefix='jmdf_', wmdf_prefix='wmdf_'):
+    def _filter_matches(self, matches, jm_dataset: Dataset, wm_dataset, jmdf_prefix='jmdf_', wmdf_prefix='wmdf_'):
 
         timestamp_metrics = [Metric.START_TIME, Metric.STOP_TIME]
 
@@ -118,7 +118,8 @@ class JobReportMatcher:
             jmdf_ts_col = jmdf_prefix + jm_dataset.col(metric)
             wmdf_ts_col = wmdf_prefix + wm_dataset.col(metric)
             matches = matches[
-                (self.timestamp_diff_series(matches[jmdf_ts_col], matches[wmdf_ts_col]) < self.timestamp_tolerance)  # |
+                (self._timestamp_diff_series(matches[jmdf_ts_col], matches[wmdf_ts_col]) < self.timestamp_tolerance)
+                # |
                 # (matches[jmdf_ts_col].isnull()) | (matches[wmdf_ts_col].isnull())
             ]
 
@@ -130,7 +131,7 @@ class JobReportMatcher:
 
         return matches
 
-    def filter_by_timestamp(self, left, matches, left_dataset, right_dataset, left_prefix='', right_prefix=''):
+    def _filter_by_timestamp(self, left, matches, left_dataset, right_dataset, left_prefix='', right_prefix=''):
 
         timestamp_metrics = [Metric.START_TIME, Metric.STOP_TIME]
 
@@ -141,12 +142,12 @@ class JobReportMatcher:
             if pd.isna(left_timestamp):
                 # Filter timestamps on the right with specified tolerance, or keep entries if the left timestamp is null
                 matches = matches[matches.apply(
-                    lambda x: self.timestamp_diff(left_timestamp, x[right_colname]) < self.timestamp_tolerance,
+                    lambda x: self._timestamp_diff(left_timestamp, x[right_colname]) < self.timestamp_tolerance,
                     axis=1) | matches[right_colname].isnull()]
 
         return matches
 
-    def match_on_cpu_time(self, jm_dataset: Dataset, wm_dataset: Dataset, jm_subset=None, wm_subset=None):
+    def _match_on_cpu_time(self, jm_dataset: Dataset, wm_dataset: Dataset, jm_subset=None, wm_subset=None):
         jmdf = jm_subset if jm_subset is not None else jm_dataset.df
         wmdf = wm_subset if wm_subset is not None else wm_dataset.df
 
@@ -157,12 +158,12 @@ class JobReportMatcher:
         jmdf_index = jmdf.index.name
         wmdf_index = wmdf.index.name
 
-        self.prefix_columns(jmdf, 'jmdf_')
-        self.prefix_columns(wmdf, 'wmdf_')
+        self._prefix_columns(jmdf, 'jmdf_')
+        self._prefix_columns(wmdf, 'wmdf_')
 
         matches = jmdf.reset_index().merge(wmdf.reset_index(), left_on='jmdf_cpuApprox', right_on='wmdf_cpuApprox')
 
-        filtered = self.filter_matches(matches, jm_dataset, wm_dataset, jmdf_prefix='jmdf_', wmdf_prefix='wmdf_')
+        filtered = self._filter_matches(matches, jm_dataset, wm_dataset, jmdf_prefix='jmdf_', wmdf_prefix='wmdf_')
 
         perfect_matches = filtered.groupby(jmdf_index).filter(lambda x: len(x) == 1)
 
@@ -187,13 +188,13 @@ class JobReportMatcher:
             if jm_group.empty or wm_group.empty:
                 continue
 
-            self.prefix_columns(jm_group, 'jmdf_')
-            self.prefix_columns(wm_group, 'wmdf_')
+            self._prefix_columns(jm_group, 'jmdf_')
+            self._prefix_columns(wm_group, 'wmdf_')
 
             group_match_count = 0
             for jm_index, jm_job in jm_group.iterrows():
-                matching_entries = self.filter_by_timestamp(jm_job, wm_group, jmset, wmset, left_prefix='jmdf_',
-                                                            right_prefix='wmdf_')
+                matching_entries = self._filter_by_timestamp(jm_job, wm_group, jmset, wmset, left_prefix='jmdf_',
+                                                             right_prefix='wmdf_')
 
                 if len(matching_entries) == 1:
                     # Perfect match found, insert into match list
@@ -207,9 +208,9 @@ class JobReportMatcher:
         match_df = pd.DataFrame.from_dict(matches)
         return match_df
 
-    def match_on_files(self, jm_dataset: Dataset, wm_dataset: Dataset, jm_subset=None, wm_subset=None):
-        jmdf = self.pick_subset(jm_dataset, jm_subset)
-        wmdf = self.pick_subset(wm_dataset, wm_subset)
+    def _match_on_files(self, jm_dataset: Dataset, wm_dataset: Dataset, jm_subset=None, wm_subset=None):
+        jmdf = self._pick_subset(jm_dataset, jm_subset)
+        wmdf = self._pick_subset(wm_dataset, wm_subset)
 
         jm_index = jmdf.index.name
         wm_index = wmdf.index.name
@@ -229,33 +230,33 @@ class JobReportMatcher:
         if possible_matches.empty:
             return None
 
-        self.prefix_columns(jmdf, 'jmdf_')
-        self.prefix_columns(wmdf, 'wmdf_')
+        self._prefix_columns(jmdf, 'jmdf_')
+        self._prefix_columns(wmdf, 'wmdf_')
 
         matched_jobs = possible_matches.join(jmdf, on=jm_index).join(wmdf, on=wm_index)
-        filtered = self.filter_matches(matched_jobs, jm_dataset, wm_dataset, jmdf_prefix='jmdf_', wmdf_prefix='wmdf_')
+        filtered = self._filter_matches(matched_jobs, jm_dataset, wm_dataset, jmdf_prefix='jmdf_', wmdf_prefix='wmdf_')
 
         perfect_matches = filtered.groupby(jm_index).filter(lambda x: len(x) == 1)
         return perfect_matches[[jm_index, wm_index]]
 
     @staticmethod
-    def pick_subset(dataset: Dataset, subset=None):
+    def _pick_subset(dataset: Dataset, subset=None):
         return subset if subset is not None else dataset.df
 
     @staticmethod
-    def prefix_columns(df, prefix=''):
+    def _prefix_columns(df, prefix=''):
         df.columns = map(lambda x: prefix + x, df.columns)
 
     @staticmethod
-    def timestamp_diff(ts1, ts2):
+    def _timestamp_diff(ts1, ts2):
         return abs((ts1 - ts2).total_seconds())
 
     @staticmethod
-    def timestamp_diff_series(ts_series1, ts_series2):
+    def _timestamp_diff_series(ts_series1, ts_series2):
         return (ts_series1 - ts_series2).dt.total_seconds().abs()
 
     @staticmethod
-    def group_by_time(df, ts_cols: List[str], freq):
+    def _group_by_time(df, ts_cols: List[str], freq):
         df = df.copy()
         for timestamp_col in ts_cols:
             df[timestamp_col] = df[timestamp_col].dt.floor(freq)

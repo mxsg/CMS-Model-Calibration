@@ -4,6 +4,8 @@ from data.dataset import Dataset, Metric
 
 
 def add_jobs_report_section(dataset: Dataset, report: rp.ReportBuilder):
+    """Add a section including general job information to the markdown report."""
+
     report.append_paragraph("## Job dataset '{}'".format(dataset.name))
     report.append()
 
