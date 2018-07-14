@@ -1,6 +1,5 @@
 from enum import Enum
 
-
 class Metric(Enum):
     """ This contains the possible metrics a dataset can exhibit.
 
