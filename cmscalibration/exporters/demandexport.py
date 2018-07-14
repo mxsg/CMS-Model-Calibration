@@ -8,7 +8,6 @@ def export_to_json_file(job_type_demands, path):
                         'cpuDemandStoEx',
                         'ioTimeStoEx',
                         'ioTimeRatioStoEx',
-                        # 'interarrivalStoEx',
                         'requiredJobslotsStoEx',
                         'relativeFrequency']
 
