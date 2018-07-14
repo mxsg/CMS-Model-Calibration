@@ -6,9 +6,10 @@ from utils.calibrationerrors import MissingColumnError
 from data.dataset import Metric, Dataset
 from interfaces.fileimport import FileDataImporter
 from utils import unique_identifier
+from utils.report import ReportingEntity
 
 
-class JMImporter(FileDataImporter):
+class JMImporter(ReportingEntity, FileDataImporter):
 
     # TODO Split this up into required and optional columns to be more flexible
     jm_dtypes = {
@@ -54,7 +55,8 @@ class JMImporter(FileDataImporter):
         'NEvProc': Metric.EVENT_COUNT,
     }
 
-    def __init__(self, timezone_correction=None, hostname_suffix='', with_files=True):
+    def __init__(self, timezone_correction=None, hostname_suffix='', with_files=True, report_builder=None):
+        super().__init__(report_builder=report_builder)
         self.timezone_correction = timezone_correction
         self.hostname_suffix = hostname_suffix
         self.with_files = with_files
@@ -79,6 +81,8 @@ class JMImporter(FileDataImporter):
 
         df_list = [pd.read_csv(path, sep=',', dtype=self.jm_dtypes) for path in path_list]
         df = pd.concat(df_list)
+
+        self.report.append("# Jobmonitoring Import")
 
         logging.debug("Finished reading Jobmonitoring file with {} entries. Now converting data.".format(df.shape[0]))
 

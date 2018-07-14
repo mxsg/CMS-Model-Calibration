@@ -97,6 +97,8 @@ class SummarizedWMAImporter(FileDataImporter):
         return job_dataset
 
     def filter_with_date_range(self, dataset, start_date, end_date):
+        """Filter the dataset to only contain entries between the start and end dates."""
+
         # TODO Optimize by also filtering the files table.
         # This is currently retained and hence also includes entries that do not correspond
         # to any entry in the jobs table any more.
