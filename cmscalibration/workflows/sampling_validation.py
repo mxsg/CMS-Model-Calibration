@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 import analysis.jobreportanalysis
-from analysis import demandextraction
+from analysis import demandextraction, visualization
 from analysis import jobreportanalysis
 from analysis import nodeanalysis
 from analysis import sampling
@@ -39,10 +39,10 @@ def run():
     # Timezone correction correct for errors in timestamps of JobMonitoring data
     dataset_importer = DatasetImporter(
         JMImporter(timezone_correction='Europe/Berlin', hostname_suffix='.gridka.de', with_files=False))
-    jm_dataset = dataset_importer.import_dataset(config.jm_input_dataset, config.start_date, config.end_date)
+    jm_dataset = dataset_importer.import_dataset(config.jm_input_dataset, start_date, end_date)
 
     wm_dataset = DatasetImporter(SummarizedWMAImporter(with_files=False)) \
-        .import_dataset(config.wm_input_dataset, config.start_date, config.end_date)
+        .import_dataset(config.wm_input_dataset, start_date, end_date)
 
 
     # jobs = jm_importer.importDataFromFile('./data/output_jobmonitoring_2018-03to04.txt')
@@ -81,7 +81,9 @@ def run():
     core_df[core_df['CMSShare'] > 1] = np.nan
 
     logging.info("Total mean share for CMS: {}".format(core_df['CMSShare'].mean()))
-    mean_core_share_in_timeframe = core_df[(core_df['Timestamp'] < end_date) & (core_df['Timestamp'] > start_date)].mean()
+    core_df_timeperiod = core_df[(core_df['Timestamp'] <= end_date) & (core_df['Timestamp'] >= start_date)]
+
+    mean_core_share_in_timeframe = core_df_timeperiod.mean()
     logging.info(
         "Mean share for CMS in time frame from {} to {}: {}".format(start_date, end_date, mean_core_share_in_timeframe))
 
@@ -108,8 +110,7 @@ def run():
 
     out_parent = './out/params'
 
-    ## Create full parameter set
-
+    # Create full parameter set
     out_directory = os.path.join(out_parent, "full")
     info_file = 'info.txt'
 
@@ -127,6 +128,13 @@ def run():
     NodeTypeExporter().export_to_json_file(scaled_nodes, filename)
 
     demands = demandextraction.extract_job_demands(job_subset)
+
+
+    # Write jobs to report
+    perf_jobs_dataset = jm_dataset
+    perf_jobs_dataset.df = job_subset
+
+    visualization.add_jobs_report_section(perf_jobs_dataset, report)
 
     # TODO Refactor this into its own method!
     day_count = (end_date - start_date).days

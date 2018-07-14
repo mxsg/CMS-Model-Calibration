@@ -4,7 +4,11 @@ from datetime import datetime
 
 
 class ReportBuilder:
-    """ Instances of this class can be used to build and save markdown reports. """
+    """Instances of this class can be used to build and save markdown reports.
+
+    Markdown generation functionality is inspired by the Python Markdown Generator module from
+    https://github.com/cmccandless/markdown-generator
+    """
 
     def __init__(self, base_path=None, filename=None):
         self.report = ''
@@ -21,16 +25,18 @@ class ReportBuilder:
 
         self.filename = filename
 
-    def append(self, content):
+    def append(self, content=None):
         """ Append the content to the current report. This adds a newline after the string content. """
-        self.report += content.rstrip() + '\n'
+
+        if content is not None:
+            self.report += str(content).rstrip() + '\n'
 
     def append_paragraph(self, content):
         """ Append the content to the current report.
         This adds an empty line before and a newline after the string content.
         """
         self.append('\n')
-        self.append(content)
+        self.append(str(content))
 
     def write(self):
         """Write the contents of the report to the file selected when constructing the report builder."""
@@ -38,6 +44,27 @@ class ReportBuilder:
 
         with open(report_path, 'w') as f:
             f.write(self.report)
+
+
+class CodeBlock:
+    """A representation for a markdown code block."""
+
+    def __init__(self):
+        self.content = []
+
+    def append(self, content):
+        self.content.append(content)
+        return self
+
+    def __str__(self):
+        if not self.content:
+            return ''
+        else:
+            block = []
+            block.append('```')
+            block.extend(self.content)
+            block.append('```')
+            return '\n'.join(block)
 
 
 class ReportingEntity:

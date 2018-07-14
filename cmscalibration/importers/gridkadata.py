@@ -36,11 +36,10 @@ class CPUEfficienciesImporter(FileDataImporter):
         return df
 
 
-class GridKaNodeDataImporter(CSVImporter):
+class GridKaNodeDataImporter:
     """Imports node information with the format provided by GridKa."""
 
     def __init__(self):
-        super().__init__()
         self.header = \
             'hostname,jobslots,hs06,db12-at-boot,db12cpp-at-boot,db12numpy-at-boot,cores,cpu model,interconnect'
 
