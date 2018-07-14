@@ -4,6 +4,7 @@ import logging
 import os
 import sys
 from datetime import datetime
+import importlib
 
 import numpy as np
 import pandas as pd
@@ -39,8 +40,18 @@ def main():
     logging.debug("Running with Pandas version: {}".format(pd.__version__))
     logging.debug("Running with Numpy version: {}".format(np.__version__))
 
-    # sampling_validation.run_workflow()
-    gridka_calibration.calibrate_gridka()
+    # Load workflow module from configuration file
+    try:
+        workflow_module = importlib.import_module(config.workflow_module)
+    except ImportError as e:
+        print("Could not import workflow module {}. Error: {}".format(config.workflow_module, str(e)))
+        sys.exit(1)
+
+    if not hasattr(workflow_module, 'run'):
+        print("Could not run workflow. Workflows must implement a run() method.")
+        sys.exit(1)
+    else:
+        workflow_module.run()
 
     logging.debug("Model Calibration Finished")
 
