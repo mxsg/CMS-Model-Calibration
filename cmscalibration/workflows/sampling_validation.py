@@ -3,6 +3,7 @@ import os
 
 import numpy as np
 import pandas as pd
+
 from analysis import cpuefficiencyanalysis
 from analysis import demandextraction
 from analysis import jobmonitoring
@@ -11,27 +12,39 @@ from analysis import sampling
 from exporters import demandexport
 from exporters import nodetypes
 from importers.cpuefficiencies import CPUEfficienciesImporter
-from importers.jobmonitoring import JobMonitoringImporter
+from importers.dataset import DatasetImporter
+from importers.jmimport import JMImporter
 from importers.nodedata import GridKaNodeDataImporter
 from importers.usedcores import CoreUsageImporter
+from importers.wmaimport import SummarizedWMAImporter
+from data.dataset import Metric
 from merge import job_node
+from utils import config
 from validation import cpuefficiency
 
 
-def run_workflow():
-    jm_importer = JobMonitoringImporter()
+def run():
+    start_date = pd.to_datetime(config.start_date)
+    end_date = pd.to_datetime(config.end_date)
 
-    start_date = pd.to_datetime('2018-03-01')
-    end_date = pd.to_datetime('2018-05-01')
+    # Timezone correction correct for errors in timestamps of JobMonitoring data
+    dataset_importer = DatasetImporter(
+        JMImporter(timezone_correction='Europe/Berlin', hostname_suffix='.gridka.de', with_files=False))
+    jm_dataset = dataset_importer.import_dataset(config.jm_input_dataset, config.start_date, config.end_date)
 
-    jobs = jm_importer.importDataFromFile('./data/output_jobmonitoring_2018-03to04.txt')
+    wm_dataset = DatasetImporter(SummarizedWMAImporter(with_files=False)) \
+        .import_dataset(config.wm_input_dataset, config.start_date, config.end_date)
+
+
+    # jobs = jm_importer.importDataFromFile('./data/output_jobmonitoring_2018-03to04.txt')
+    jobs = jm_dataset.df
 
     node_importer = GridKaNodeDataImporter()
     nodes = node_importer.importDataFromFile('./data/gridka-benchmarks-2017.csv')
 
     nodeanalysis.addPerformanceData(nodes)
 
-    matched_jobs = job_node.match_jobs_to_node(jobs, nodes)
+    matched_jobs = job_node.match_jobs_to_node(jm_dataset.df, nodes)
 
     job_data = jobmonitoring.add_performance_data(matched_jobs)
 
@@ -95,10 +108,10 @@ def run_workflow():
 
     logging.debug("===== Job count before dropping: {}".format(job_data.shape[0]))
 
-    job_subset = job_data[(job_data['StartedRunningTimeStamp'] >= start_date) &
-                          (job_data['FinishedTimeStamp'] < end_date)].copy()
+    job_subset = job_data[(job_data[Metric.STOP_TIME.value] >= start_date) &
+                          (job_data[Metric.FINISHED_TIME.value] < end_date)].copy()
 
-    job_subset = job_subset.drop_duplicates(['JobId', 'StartedRunningTimeStamp', 'FinishedTimeStamp'])
+    # job_subset = job_subset.drop_duplicates(['JobId', 'StartedRunningTimeStamp', 'FinishedTimeStamp'])
 
     logging.debug("===== Job count after dropping: {}".format(job_subset.shape[0]))
 
@@ -111,7 +124,7 @@ def run_workflow():
     # TODO Refactor this into its own method!
     day_count = (end_date - start_date).days
 
-    summary = job_subset.groupby('Type').size().reset_index()
+    summary = job_subset.groupby(Metric.JOB_TYPE.value).size().reset_index()
     summary.columns = ['Type', 'Count']
     summary['countPerDay'] = summary['Count'] / day_count
     summary['relFrequency'] = summary['Count'] / summary['Count'].sum()
@@ -164,10 +177,10 @@ def run_workflow():
 
         logging.debug("===== Job count before dropping: {}".format(job_data.shape[0]))
 
-        job_subset = job_data[(job_data['StartedRunningTimeStamp'] >= start_date) &
-                              (job_data['FinishedTimeStamp'] < end_date)].copy()
+        job_subset = job_data[(job_data[Metric.START_TIME.value] >= start_date) &
+                              (job_data[Metric.FINISHED_TIME.value] < end_date)].copy()
 
-        job_subset = job_subset.drop_duplicates(['JobId', 'StartedRunningTimeStamp', 'FinishedTimeStamp'])
+        # job_subset = job_subset.drop_duplicates(['JobId', 'StartedRunningTimeStamp', 'FinishedTimeStamp'])
 
         logging.debug("===== Job count after dropping: {}".format(job_subset.shape[0]))
 
@@ -185,7 +198,7 @@ def run_workflow():
             # TODO Refactor this into its own method!
             day_count = (end_date - start_date).days
 
-            summary = sample.groupby('Type').size().reset_index()
+            summary = sample.groupby(Metric.JOB_TYPE.value).size().reset_index()
             summary.columns = ['Type', 'Count']
             summary['countPerDay'] = summary['Count'] / day_count
             summary['relFrequency'] = summary['Count'] / summary['Count'].sum()
