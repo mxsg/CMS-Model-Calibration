@@ -9,9 +9,9 @@ def main():
     ssh_analytix_host = 'analytix'
 
     hdfs_base_path = 'hdfs:///cms/users/mstemmer'
-    hdfs_dataset = 'jobmonitoring-header'
+    hdfs_dataset = 'wmarchive-flattened-json'
 
-    cmsspark_script = 'gridka_jm.py'
+    cmsspark_script = 'gridka_wmarchive_selection.py'
 
     start_year = 2018
     start_month = 1

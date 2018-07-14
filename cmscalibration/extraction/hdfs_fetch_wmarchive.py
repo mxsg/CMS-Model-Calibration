@@ -12,14 +12,14 @@ def main():
     ssh_host = 'lxplus7.cern.ch'
 
     hdfs_base_path = 'hdfs:///cms/users/mstemmer'
-    hdfs_dataset = 'jobmonitoring-header'
+    hdfs_dataset = 'wmarchive-flattened-json'
     start_date = '20180101'
     day_count = 61
-    has_header = True
+    has_header = False
 
     # dates = construct_date_list(start_date, day_count)
-    dates = ['201801', '201802', '201803', '201804', '201805', '201806']
-    # dates = ['201806']
+    # dates = ['201801', '201802', '201803', '201804', '201805', '201806']
+    dates = ['201801']
 
     output_path = '/Volumes/storage/ba-thesis/cmsdata'
     local_parent = os.path.expanduser(os.path.join(output_path, hdfs_dataset))
