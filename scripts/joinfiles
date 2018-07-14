@@ -18,7 +18,7 @@ if [ -f $output_file ]; then
     exit 1
 fi
 
-dates=`python -c "import date_utils; print(' '.join(date_utils.constructDateList('20180101', 59)))"`
+dates=`python -c "importers date_utils; print(' '.join(date_utils.constructDateList('20180101', 59)))"`
 echo "Extracting info for dates: $dates"
 
 for date in $dates
