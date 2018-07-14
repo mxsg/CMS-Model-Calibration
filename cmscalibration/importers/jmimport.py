@@ -74,20 +74,20 @@ class JMImporter(FileDataImporter):
         return self.import_file_list([path], start_date, end_date)
 
     def import_file_list(self, path_list, start_date=None, end_date=None):
-        logging.debug(f"Reading Jobmonitoring files from paths {path_list}.")
+        logging.debug("Reading Jobmonitoring files from paths {}.".format(path_list))
 
         df_list = [pd.read_csv(path, sep=',', dtype=self.jm_dtypes) for path in path_list]
         df = pd.concat(df_list)
 
-        logging.debug(f"Finished reading Jobmonitoring file with {df.shape[0]} entries. Now converting data.")
+        logging.debug("Finished reading Jobmonitoring file with {} entries. Now converting data.".format(df.shape[0]))
 
         job_dataset = self._convert_raw_data_to_dataset(df, start=start_date, end=end_date)
-        logging.debug(f"Finished converting Jobmonitoring dataset with {job_dataset.df.shape[0]} jobs.")
+        logging.debug("Finished converting Jobmonitoring dataset with {} jobs.".format(job_dataset.df.shape[0]))
 
-        logging.debug(f"Filtering to jobs between dates {start_date} and {end_date}.")
+        logging.debug("Filtering to jobs between dates {} and {}.".format(start_date, end_date))
         jobs_all_dates = job_dataset.df.shape[0]
         self.filter_with_date_range(job_dataset, start_date, end_date)
-        logging.debug(f"Jobs before filtering {jobs_all_dates}, after {job_dataset.df.shape[0]}.")
+        logging.debug("Jobs before filtering {}, after {}.".format(jobs_all_dates, job_dataset.df.shape[0]))
 
         return job_dataset
 
@@ -107,7 +107,7 @@ class JMImporter(FileDataImporter):
         missing_columns = set(self.required_columns) - set(df.columns)
 
         if len(missing_columns) > 0:
-            logging.error(f"Jobmonitoring file has missing columns: {missing_columns}!")
+            logging.error("Jobmonitoring file has missing columns: {}!".format(missing_columns))
             raise MissingColumnError(missing_columns)
 
         # Drop all unimportant columns inplace
@@ -120,7 +120,7 @@ class JMImporter(FileDataImporter):
             logging.debug("Found ID column in Jobmonitoring data.")
         else:
             logging.info("Could not find ID column in Jobmonitoring data.")
-            logging.info(f"Generating unique ID from columns {self.key_columns}. This may take a while.")
+            logging.info("Generating unique ID from columns {}. This may take a while.".format(self.key_columns))
             df[self.id_column] = unique_identifier.hash_columns(df, self.key_columns)
 
         # Set up table with files for later setting it in the dataset
@@ -133,9 +133,9 @@ class JMImporter(FileDataImporter):
 
         id_duplicate_sum = jobs.duplicated(self.id_column).sum()
         if id_duplicate_sum > 0:
-            logging.warning(f"Found {id_duplicate_sum} duplicates in IDs of jobs, dropping them.")
+            logging.warning("Found {} duplicates in IDs of jobs, dropping them.".format(id_duplicate_sum))
 
-        logging.debug(f"Found {jobs.shape[0]} jobs in file.")
+        logging.debug("Found {} jobs in file.".format(jobs.shape[0]))
 
         jobs = self._convert_columns(jobs)
 
@@ -157,11 +157,11 @@ class JMImporter(FileDataImporter):
         jmdf[host_column] = self._standardize_host_names(jmdf[host_column], self.hostname_suffix)
         host_names_after = jmdf[host_column].nunique()
 
-        logging.debug(f"Standardized host names, before {host_names_before}, after {host_names_after}")
+        logging.debug("Standardized host names, before {}, after {}".format(host_names_before, host_names_after))
 
         jmdf['JobType'] = jmdf['JobType'].str.lower()
 
-        # TODO Maybe store the information lost here in another place?
+        # Remove prefix from task monitor ID
         jmdf['TaskMonitorId'] = jmdf['TaskMonitorId'].replace('^wmagent_', '', regex=True)
 
         # Convert to time stamps

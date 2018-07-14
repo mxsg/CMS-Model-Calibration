@@ -1,9 +1,15 @@
+"""
+Search for irregular data in a CSV file. This script finds lines in the file that do not have an
+equal number of columns as the header (or first line) of the file.
+"""
+
 import sys
+
 
 def main():
     with open(sys.argv[1], 'r') as f:
 
-        header = f.readline();
+        header = f.readline()
         header_names = header.split(',')
 
         element_count = len(header_names)
@@ -24,6 +30,7 @@ def main():
                     print("{}: {}".format(i, j))
 
         print("Finished, found {} irregular lines.".format(irregular_lines))
+
 
 if __name__ == '__main__':
     main()

@@ -21,13 +21,10 @@ class DatasetDescription:
         if not file_list:
             raise ValueError("Datasets cannot be empty!")
 
-        # TODO Check for sanity of values here.
-
         self._files = pd.DataFrame({'file': desc.get('file'), 'start': pd.to_datetime(desc.get('start')),
                                     'end': pd.to_datetime(desc.get('end'))}
                                    for desc in file_list)
 
-    # TODO Throw error if the period is not fully contained in this data set!
     def files_for_period(self, start, end):
         """
         Return all files that contain data between the supplied start and end dates.

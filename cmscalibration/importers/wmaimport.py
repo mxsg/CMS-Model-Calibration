@@ -53,11 +53,11 @@ class SummarizedWMAImporter(FileDataImporter):
         return self.import_file_list([path], start_date, end_date)
 
     def import_file_list(self, path_list, start_date, end_date):
-        logging.debug(f"Importing WMArchive data from paths: {path_list}.")
+        logging.debug("Importing WMArchive data from paths: {}.".format(path_list))
 
         wmdf_list = [pd.read_json(path, lines=True) for path in path_list]
 
-        logging.debug(f"Reading complete.")
+        logging.debug("Reading complete.")
 
         df_raw = pd.concat(wmdf_list)
 
@@ -65,12 +65,12 @@ class SummarizedWMAImporter(FileDataImporter):
         missing_columns = set(self.required_columns) - set(df_raw.columns)
 
         if len(missing_columns) > 0:
-            logging.error(f"Jobmonitoring file has missing columns: {missing_columns}!")
+            logging.error("Jobmonitoring file has missing columns: {}!".format(missing_columns))
             raise MissingColumnError(missing_columns)
 
         id_duplicates = df_raw[self.id_column].duplicated().sum()
         if id_duplicates > 0:
-            logging.warning(f"WMArchive dataset contains {id_duplicates} duplicated IDs. Dropping them.")
+            logging.warning("WMArchive dataset contains {} duplicated IDs. Dropping them.".format(id_duplicates))
             df_raw = df_raw.drop_duplicates(self.id_column)
 
         additional_tables = {}
@@ -90,8 +90,11 @@ class SummarizedWMAImporter(FileDataImporter):
         self.filter_with_date_range(job_dataset, start_date, end_date)
         return job_dataset
 
-    # TODO This does not filter the files table. Optimize by doing this!
     def filter_with_date_range(self, dataset, start_date, end_date):
+        # TODO Optimize by also filtering the files table.
+        # This is currently retained and hence also includes entries that do not correspond
+        # to any entry in the jobs table any more.
+
         jobs = dataset.df
 
         # Filter entries based on jobs' stop date
@@ -124,7 +127,6 @@ class SummarizedWMAImporter(FileDataImporter):
         df = df.rename(columns=rename_spec)
         return df
 
-    # TODO Put this into a utils module?
     @staticmethod
     def _convert_timestamps(series):
         # Filter out invalid time stamps and then find the first valid date in the data set
