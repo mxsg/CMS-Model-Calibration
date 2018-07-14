@@ -19,10 +19,13 @@ class JobReportMatcher:
         self.time_grouping_freq = time_grouping_freq
 
     def match_reports(self, jmset, wmset, use_files=True):
-        """Match reports from jobmonitoring and WMArchive data. Can use comparisons between file lists to identify
-        potential matches.
-        """
+        """Match reports from jobmonitoring and WMArchive data.
 
+        :param jmset: The JobMonitoring dataset.
+        :param wmset: The WMArchive dataset.
+        :param use_files: If true, use comparisons between file lists to identify potential matches.
+        :return: A data frame containing matches from the index columns of the two datasets.
+        """
         unmatched_jmdf = jmset.df.copy()
         unmatched_wmdf = wmset.df.copy()
 
