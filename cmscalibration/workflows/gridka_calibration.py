@@ -3,7 +3,7 @@ import logging
 from datetime import datetime
 
 from analysis import nodeanalysis
-from exporters import nodetypes
+from exporters.nodetypes import NodeTypeExporter
 from importers.dataset_import import DatasetImporter
 from importers.jmimport import JMImporter
 from importers.gridkadata import GridKaNodeDataImporter
@@ -36,7 +36,7 @@ def run():
     # jobs = jm_dataset.jobs
     # files = jm_dataset.files
 
-    nodes = GridKaNodeDataImporter().importDataFromFile(config.node_info)
+    nodes = GridKaNodeDataImporter().import_file(config.node_info)
 
     nodeanalysis.add_performance_data(nodes)
     node_types = nodeanalysis.extract_node_types(nodes)
@@ -44,7 +44,7 @@ def run():
     scaled_nodes = nodeanalysis.scale_site_by_benchmark(node_types, 0.22888333333)
     # scaled_nodes = nodeanalysis.scaleSiteWithNodeTypes(node_types, 0.20)
 
-    nodetypes.exportToJsonFile(scaled_nodes, './out/nodes.json')
+    NodeTypeExporter().export_to_json_file(scaled_nodes, './out/nodes.json')
 
     # matched_jobs = job_node.match_jobs_to_node(jobs, nodes)
 

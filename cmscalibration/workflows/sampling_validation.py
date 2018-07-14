@@ -11,7 +11,7 @@ from analysis import jobreportanalysis
 from analysis import nodeanalysis
 from analysis import sampling
 from exporters import demandexport
-from exporters import nodetypes
+from exporters.nodetypes import NodeTypeExporter
 from importers.gridkadata import CPUEfficienciesImporter, GridKaNodeDataImporter, CoreUsageImporter
 from importers.dataset_import import DatasetImporter
 from importers.jmimport import JMImporter
@@ -48,7 +48,7 @@ def run():
     # jobs = jm_importer.importDataFromFile('./data/output_jobmonitoring_2018-03to04.txt')
     jobs = jm_dataset.df
 
-    nodes = GridKaNodeDataImporter().importDataFromFile('./data/gridka-benchmarks-2017.csv')
+    nodes = GridKaNodeDataImporter().import_file('./data/gridka-benchmarks-2017.csv')
     nodeanalysis.add_performance_data(nodes)
 
     matched_jobs = job_node.match_jobs_to_node(jm_dataset.df, nodes)
@@ -68,8 +68,8 @@ def run():
         cpu_efficiency_scaled_physical))
 
     core_importer = CoreUsageImporter()
-    core_usage_cms = core_importer.importDataFromFile('./data/core_usage_data_cms.csv')
-    total_cores = core_importer.importDataFromFile('./data/total_available_cores.csv')
+    core_usage_cms = core_importer.import_file('./data/core_usage_data_cms.csv', config.start_date, config.end_date)
+    total_cores = core_importer.import_file('./data/total_available_cores.csv', config.start_date, config.end_date)
 
     core_usage_cms = core_usage_cms.rename(columns={'Value': 'CMSCores'})
     total_cores = total_cores.rename(columns={'Value': 'TotalCores'})
@@ -81,7 +81,7 @@ def run():
     core_df[core_df['CMSShare'] > 1] = np.nan
 
     logging.info("Total mean share for CMS: {}".format(core_df['CMSShare'].mean()))
-    mean_core_share_in_timeframe = core_df[(core_df['Timestamp'] < end_date) & (core_df['Timestamp'])].mean()
+    mean_core_share_in_timeframe = core_df[(core_df['Timestamp'] < end_date) & (core_df['Timestamp'] > start_date)].mean()
     logging.info(
         "Mean share for CMS in time frame from {} to {}: {}".format(start_date, end_date, mean_core_share_in_timeframe))
 
@@ -97,7 +97,7 @@ def run():
     # scaled_nodes = nodeanalysis.scaleSiteWithNodeTypes(node_types, 0.20)
 
     cpu_eff_importer = CPUEfficienciesImporter()
-    cpu_eff_df = cpu_eff_importer.importDataFromFile('./data/gridka_cpu_over_walltime.csv')
+    cpu_eff_df = cpu_eff_importer.import_file('./data/gridka_cpu_over_walltime.csv', config.start_date, config.end_date)
 
     cpu_efficiency_data = analysis.jobreportanalysis.compute_average_cpu_efficiency(cpu_eff_df, start=start_date,
                                                                                     end=end_date)
@@ -124,7 +124,7 @@ def run():
 
     filename = os.path.join(out_directory, 'nodes.json')
     os.makedirs(os.path.dirname(filename), exist_ok=True)
-    nodetypes.exportToJsonFile(scaled_nodes, filename)
+    NodeTypeExporter().export_to_json_file(scaled_nodes, filename)
 
     demands = demandextraction.extract_job_demands(job_subset)
 
@@ -198,7 +198,7 @@ def run():
             filename = os.path.join(out_subdirectory, 'nodes.json')
             os.makedirs(os.path.dirname(filename), exist_ok=True)
 
-            nodetypes.exportToJsonFile(scaled_nodes, filename)
+            NodeTypeExporter().export_to_json_file(scaled_nodes, filename)
 
             demands = demandextraction.extract_job_demands(sample)
 
