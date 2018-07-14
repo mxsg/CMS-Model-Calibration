@@ -63,7 +63,7 @@ def run():
     logging.info("Total CPU time / Walltime efficiency scaled by jobslot count and virtual cores: {}".format(
         cpu_efficiency_scaled))
 
-    cpu_efficiency_scaled_physical = cpuefficiency.cpu_efficiency_scaled_by_jobslots_physical(job_data)
+    cpu_efficiency_scaled_physical = cpuefficiency.cpu_efficiency_scaled_by_jobslots(job_data, physical=True)
     logging.info("Total CPU time / Walltime efficiency scaled by jobslot count and physical cores: {}".format(
         cpu_efficiency_scaled_physical))
 
@@ -157,7 +157,7 @@ def run():
 
         cpu_efficiency = cpuefficiency.cpu_efficiency(job_subset)
         cpu_efficiency_scaled = cpuefficiency.cpu_efficiency_scaled_by_jobslots(job_subset)
-        cpu_efficiency_scaled_physical = cpuefficiency.cpu_efficiency_scaled_by_jobslots_physical(job_subset)
+        cpu_efficiency_scaled_physical = cpuefficiency.cpu_efficiency_scaled_by_jobslots(job_subset, physical=True)
 
         file.write("## Data from job reports:\n")
         file.write("Total CPU time / Walltime efficiency: {}\n".format(cpu_efficiency))
@@ -252,7 +252,7 @@ def run():
 
                 cpu_efficiency = cpuefficiency.cpu_efficiency(job_subset)
                 cpu_efficiency_scaled = cpuefficiency.cpu_efficiency_scaled_by_jobslots(job_subset)
-                cpu_efficiency_scaled_physical = cpuefficiency.cpu_efficiency_scaled_by_jobslots_physical(job_subset)
+                cpu_efficiency_scaled_physical = cpuefficiency.cpu_efficiency_scaled_by_jobslots(job_subset, physical=True)
 
                 file.write("## Data from job reports (FULL data set):\n")
                 file.write("Total CPU time / Walltime efficiency: {}\n".format(cpu_efficiency))
@@ -268,7 +268,7 @@ def run():
                 file.write("## Data from job reports (ONLY single sample):\n")
                 cpu_efficiency = cpuefficiency.cpu_efficiency(sample)
                 cpu_efficiency_scaled = cpuefficiency.cpu_efficiency_scaled_by_jobslots(sample)
-                cpu_efficiency_scaled_physical = cpuefficiency.cpu_efficiency_scaled_by_jobslots_physical(sample)
+                cpu_efficiency_scaled_physical = cpuefficiency.cpu_efficiency_scaled_by_jobslots(sample, physical=True)
                 file.write("Total CPU time / Walltime efficiency: {}\n".format(cpu_efficiency))
                 file.write(
                     "Total CPU time / Walltime efficiency scaled by jobslot count and virtual cores: {}\n".format(
