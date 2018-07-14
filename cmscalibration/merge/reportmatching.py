@@ -7,12 +7,22 @@ from data.dataset import Dataset, Metric
 
 
 class JobReportMatcher:
-    """ Matcher  """
+    """Matches JobMonitoring to WMArchive job reports."""
+
     def __init__(self, timestamp_tolerance=10, time_grouping_freq='D'):
+        """Create a new matching object with supplied preferences.
+
+        :param timestamp_tolerance: The tolerance to be used when comparing time stamps for potential matches.
+        :param time_grouping_freq: The frequency with which to group entries by prior to trying to match them.
+        """
         self.timestamp_tolerance = timestamp_tolerance
         self.time_grouping_freq = time_grouping_freq
 
     def match_reports(self, jmset, wmset, use_files=True):
+        """Match reports from jobmonitoring and WMArchive data. Can use comparisons between file lists to identify
+        potential matches.
+        """
+
         unmatched_jmdf = jmset.df.copy()
         unmatched_wmdf = wmset.df.copy()
 
@@ -36,7 +46,7 @@ class JobReportMatcher:
         logging.debug("Removed {} workflows not present WMArchive data.".format(len(only_wm)))
         logging.debug("Removed {} workflows not present in Jobmonitoring data.".format(len(only_jm)))
 
-        # Group by day
+        # Group by set frequency to simplify matching.
         jm_grouped = self.group_by_time(unmatched_jmdf, [jmset.col(Metric.STOP_TIME)], freq=self.time_grouping_freq)
         wm_grouped = self.group_by_time(unmatched_wmdf, [wmset.col(Metric.STOP_TIME)], freq=self.time_grouping_freq)
 
