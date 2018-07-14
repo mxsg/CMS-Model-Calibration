@@ -66,7 +66,7 @@ def run_workflow():
     logging.info("Mean number of slots for CMS: {}".format(cms_avg_cores))
 
     node_types = nodeanalysis.extractNodeTypes(nodes)
-    scaled_nodes = nodeanalysis.scale_site_to_jobslot_count(node_types, cms_avg_cores)
+    scaled_nodes = nodeanalysis.scale_site_by_jobslots(node_types, cms_avg_cores)
     # scaled_nodes = nodeanalysis.scaleSiteWithNodeTypes(node_types, 0.20)
 
     out_directory = './out/params'

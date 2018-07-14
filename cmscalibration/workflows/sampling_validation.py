@@ -12,7 +12,7 @@ from analysis import sampling
 from exporters import demandexport
 from exporters import nodetypes
 from importers.cpuefficiencies import CPUEfficienciesImporter
-from importers.dataset import DatasetImporter
+from importers.dataset_import import DatasetImporter
 from importers.jmimport import JMImporter
 from importers.nodedata import GridKaNodeDataImporter
 from importers.usedcores import CoreUsageImporter
@@ -86,7 +86,7 @@ def run():
 
 
     node_types = nodeanalysis.extractNodeTypes(nodes)
-    scaled_nodes = nodeanalysis.scale_site_to_jobslot_count(node_types, cms_avg_cores)
+    scaled_nodes = nodeanalysis.scale_site_by_jobslots(node_types, cms_avg_cores)
     # scaled_nodes = nodeanalysis.scaleSiteWithNodeTypes(node_types, 0.20)
 
     cpu_eff_importer = CPUEfficienciesImporter()
@@ -276,14 +276,3 @@ def run():
                     "Total CPU Efficiency from {} to {} (from GridKa perspective, with Pilots): {}".format(start_date,
                                                                                                            end_date,
                                                                                                            cpu_efficiency_data))
-
-    # Remove types that are very infrequent in the data
-    # job_data_filtered = jobmonitoring.filter_df_by_type(job_data, 0.0001)
-
-    # job_partitions = jobtypesplit.split_by_type(job_data_filtered, 'Type', True)
-    # demand_list = [demandextraction.extract_demands(partition) for partition in job_partitions]
-    #
-    # for demands in demand_list:
-    #     logging.debug("Demands:\n{}".format(demands))
-
-    # demandextraction.extract_demands(job_data)

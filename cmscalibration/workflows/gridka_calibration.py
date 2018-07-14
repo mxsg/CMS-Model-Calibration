@@ -2,7 +2,7 @@ import logging
 
 from analysis import nodeanalysis
 from exporters import nodetypes
-from importers.dataset import DatasetImporter
+from importers.dataset_import import DatasetImporter
 from importers.jmimport import JMImporter
 from importers.nodedata import GridKaNodeDataImporter
 from importers.wmaimport import SummarizedWMAImporter
@@ -31,7 +31,7 @@ def run():
     nodeanalysis.addPerformanceData(nodes)
     node_types = nodeanalysis.extractNodeTypes(nodes)
 
-    scaled_nodes = nodeanalysis.scaleSiteWithNodeTypes(node_types, 0.22888333333)
+    scaled_nodes = nodeanalysis.scale_site_by_benchmark(node_types, 0.22888333333)
     # scaled_nodes = nodeanalysis.scaleSiteWithNodeTypes(node_types, 0.20)
 
     nodetypes.exportToJsonFile(scaled_nodes, './out/nodes.json')
