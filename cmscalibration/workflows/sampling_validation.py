@@ -11,11 +11,9 @@ from analysis import nodeanalysis
 from analysis import sampling
 from exporters import demandexport
 from exporters import nodetypes
-from importers.cpuefficiencies import CPUEfficienciesImporter
+from importers.gridkadata import CPUEfficienciesImporter, GridKaNodeDataImporter, CoreUsageImporter
 from importers.dataset_import import DatasetImporter
 from importers.jmimport import JMImporter
-from importers.nodedata import GridKaNodeDataImporter
-from importers.usedcores import CoreUsageImporter
 from importers.wmaimport import SummarizedWMAImporter
 from data.dataset import Metric
 from merge import job_node

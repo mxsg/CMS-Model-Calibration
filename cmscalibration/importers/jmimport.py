@@ -9,7 +9,8 @@ from utils import unique_identifier
 
 
 class JMImporter(FileDataImporter):
-    # TODO Split this up into required and non-required columns!
+
+    # TODO Split this up into required and optional columns to be more flexible
     jm_dtypes = {
         'JobId': int,
         'FileName': str,

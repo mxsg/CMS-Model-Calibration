@@ -8,10 +8,8 @@ from analysis import jobmonitoring
 from analysis import nodeanalysis
 from exporters import demandexport
 from exporters import nodetypes
-from importers.cpuefficiencies import CPUEfficienciesImporter
+from importers.gridkadata import CPUEfficienciesImporter, GridKaNodeDataImporter, CoreUsageImporter
 from importers.jobmonitoring import JobMonitoringImporter
-from importers.nodedata import GridKaNodeDataImporter
-from importers.usedcores import CoreUsageImporter
 from merge import job_node
 from validation import cpuefficiency
 

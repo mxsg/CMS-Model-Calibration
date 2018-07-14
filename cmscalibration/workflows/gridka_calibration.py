@@ -6,7 +6,7 @@ from analysis import nodeanalysis
 from exporters import nodetypes
 from importers.dataset_import import DatasetImporter
 from importers.jmimport import JMImporter
-from importers.nodedata import GridKaNodeDataImporter
+from importers.gridkadata import GridKaNodeDataImporter
 from importers.wmaimport import SummarizedWMAImporter
 from merge.reportmatching import JobReportMatcher
 from utils.report import ReportBuilder
