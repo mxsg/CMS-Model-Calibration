@@ -21,9 +21,11 @@ def run():
     report.append('# GridKa Calibration Run')
     report.append('at {}'.format(datetime.now().strftime('%Y-%m-%d, %H:%M:%S')))
 
-    # Timezone correction correct for errors in timestamps of JobMonitoring data
     dataset_importer = DatasetImporter(
-        JMImporter(timezone_correction='Europe/Berlin', hostname_suffix='.gridka.de', with_files=False))
+        JMImporter(timezone_correction='Europe/Berlin', # Correct for errors in timestamps of JobMonitoring data
+                   hostname_suffix='.gridka.de',
+                   with_files=False)
+    )
     jm_dataset = dataset_importer.import_dataset(config.jm_input_dataset, config.start_date, config.end_date)
 
     wm_dataset = DatasetImporter(SummarizedWMAImporter(with_files=True)) \
@@ -46,7 +48,6 @@ def run():
 
     # matched_jobs = job_node.match_jobs_to_node(jobs, nodes)
 
-    report.append('')
     report.append('Model calibration finished')
 
     report.write()
