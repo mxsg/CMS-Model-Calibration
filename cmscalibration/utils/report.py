@@ -28,8 +28,10 @@ class ReportBuilder:
     def append(self, content=None):
         """ Append the content to the current report. This adds a newline after the string content. """
 
-        if content is not None:
-            self.report += str(content).rstrip() + '\n'
+        if content is None:
+            self.report += '\n'
+        else:
+            self.report += str(content) + '\n'
 
     def append_paragraph(self, content):
         """ Append the content to the current report.

@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 import analysis.jobreportanalysis
-from analysis import demandextraction, visualization, cpuefficiency
+from analysis import demandextraction, calibrationreport, cpuefficiency
 from analysis import jobreportanalysis
 from analysis import nodeanalysis
 from analysis import sampling
@@ -43,18 +43,12 @@ def run():
     wm_dataset = DatasetImporter(SummarizedWMAImporter(with_files=False)) \
         .import_dataset(config.wm_input_dataset, start_date, end_date)
 
-
-    # jobs = jm_importer.importDataFromFile('./data/output_jobmonitoring_2018-03to04.txt')
-    jobs = jm_dataset.df
-
     nodes = GridKaNodeDataImporter().import_file('./data/gridka-benchmarks-2017.csv')
     nodeanalysis.add_performance_data(nodes)
 
     matched_jobs = job_node.match_jobs_to_node(jm_dataset.df, nodes)
 
     job_data = jobreportanalysis.add_jobmonitoring_performance_data(matched_jobs)
-
-
 
     cpu_efficiency = cpuefficiency.cpu_efficiency(job_data)
     logging.info("Total CPU time / Walltime efficiency: {}".format(cpu_efficiency))
@@ -133,7 +127,7 @@ def run():
     perf_jobs_dataset = jm_dataset
     perf_jobs_dataset.df = job_subset
 
-    visualization.add_jobs_report_section(perf_jobs_dataset, report)
+    calibrationreport.add_jobs_report_section(perf_jobs_dataset, report)
 
     # TODO Refactor this into its own method!
     day_count = (end_date - start_date).days

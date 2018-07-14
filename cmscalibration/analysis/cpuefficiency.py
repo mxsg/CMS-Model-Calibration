@@ -30,7 +30,10 @@ def cpu_efficiency_scaled_by_jobslots(df, include_zero_cpu=False, physical=False
     else:
         df_filtered = df_filtered[df_filtered[wrap_cpu] > 0]
 
-    core_col = 'cores' if physical else 'coresLogical'
+    if physical:
+        core_col = 'cores'
+    else:
+        core_col = 'coresLogical'
 
     total_walltime = \
         (df_filtered[wrap_wc] * df_filtered[core_count] * df_filtered[core_col] / df_filtered['jobslots']).sum()
