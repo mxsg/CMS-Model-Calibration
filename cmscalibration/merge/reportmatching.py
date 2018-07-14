@@ -1,131 +1,140 @@
+import logging
 from typing import List
 
 import pandas as pd
 
-from ..data.dataset import JobsDataset, Metrics
+from data.dataset import Dataset, Metric
 
 
 class JobReportMatcher:
 
-    def __init__(self, timestamp_tolerance=10):
+    def __init__(self, timestamp_tolerance=10, time_grouping_freq='D'):
         self.timestamp_tolerance = timestamp_tolerance
+        self.time_grouping_freq = time_grouping_freq
 
-    def match_reports(self, jmset, wmset, jmfiles=None, wmfiles=None, cached_matches=None):
-        unmatched_jmdf = jmset.jobs.copy()
-        unmatched_wmdf = wmset.jobs.copy()
+    def match_reports(self, jmset, wmset, use_files=True):
+        unmatched_jmdf = jmset.df.copy()
+        unmatched_wmdf = wmset.df.copy()
 
-        print(jmset.metrics)
-        print(wmset.metrics)
-
-        # TODO Make this generic!
+        # TODO Make this generic to exclude data from either
         # Exclude crab jobs as they are not present in the other data set
-        unmatched_jmdf = unmatched_jmdf[unmatched_jmdf[jmset.col(Metrics.SUBMISSION_TOOL)] != 'crab3']
+        unmatched_jmdf = unmatched_jmdf[unmatched_jmdf[jmset.col(Metric.SUBMISSION_TOOL)] != 'crab3']
 
-        # TODO Check whether this is valid, are there any matches with differing workflows?
-
-        print("Removing all workflow not present in both data sets.")
+        logging.debug("Removing all workflows not present in both data sets.")
 
         # Remove all workflows that are not present in the other data set
-        jm_workflows = set(unmatched_jmdf[jmset.col(Metrics.WORKFLOW)])
-        wm_workflows = set(unmatched_wmdf[wmset.col(Metrics.WORKFLOW)])
+        jm_workflows = set(unmatched_jmdf[jmset.col(Metric.WORKFLOW)].unique())
+        wm_workflows = set(unmatched_wmdf[wmset.col(Metric.WORKFLOW)].unique())
         in_both = jm_workflows & wm_workflows
 
-        unmatched_jmdf = unmatched_jmdf[unmatched_jmdf[jmset.col(Metrics.WORKFLOW)].isin(in_both)]
-        unmatched_wmdf = unmatched_wmdf[unmatched_wmdf[wmset.col(Metrics.WORKFLOW)].isin(in_both)]
+        unmatched_jmdf = unmatched_jmdf[unmatched_jmdf[jmset.col(Metric.WORKFLOW)].isin(in_both)]
+        unmatched_wmdf = unmatched_wmdf[unmatched_wmdf[wmset.col(Metric.WORKFLOW)].isin(in_both)]
 
-        print("Removed all workflow not present in both data sets.")
+        only_wm = wm_workflows - jm_workflows
+        only_jm = jm_workflows - wm_workflows
 
-        jm_grouped = self.group_by_time(unmatched_jmdf, [jmset.col(Metrics.STOP_TIME)], freq='D')
-        wm_grouped = self.group_by_time(unmatched_wmdf, [wmset.col(Metrics.STOP_TIME)], freq='D')
+        logging.debug(f"Removed {len(only_wm)} workflows not present WMArchive data.")
+        logging.debug(f"Removed {len(only_jm)} workflows not present in Jobmonitoring data.")
+
+        # Group by day
+        jm_grouped = self.group_by_time(unmatched_jmdf, [jmset.col(Metric.STOP_TIME)], freq=self.time_grouping_freq)
+        wm_grouped = self.group_by_time(unmatched_wmdf, [wmset.col(Metric.STOP_TIME)], freq=self.time_grouping_freq)
 
         match_list = []
         total_compared = 0
         total = unmatched_jmdf.shape[0]
 
         for key, jm_group in jm_grouped:
-            # try:
-            wm_group = wm_grouped.get_group(key)
-            # except:
-            #     # Group is not present in other frame
-            #     continue
+            try:
+                wm_group = wm_grouped.get_group(key)
+            except KeyError:
+                # Group is not present in other frame
+                continue
 
             if jm_group.empty or wm_group.empty:
                 continue
 
-            print("wmdf {}, jmdf {}".format(len(jm_group), len(wm_group)))
-
             group_matches = self.match_on_cpu_time(jmset, wmset, jm_group, wm_group)
             match_list.append(group_matches)
-            print("Found {} matches".format(len(group_matches)))
+
             total_compared += len(jm_group)
-            print("total compared {}, fraction {}".format(total_compared, total_compared / total))
+            logging.debug(
+                f"Found {len(group_matches)} matches (of {len(wm_group)} WM, {len(jm_group)} JM, "
+                f"{100 * total_compared / total:.4}% compared)."
+            )
 
         matches = pd.concat(match_list)
-        print("Duplicates in jmdf matches: {}".format(matches[unmatched_jmdf.index.name].duplicated().sum()))
-        print("Duplicates in wmdf matches: {}".format(matches[unmatched_wmdf.index.name].duplicated().sum()))
 
+        logging.debug(f"{matches[unmatched_jmdf.index.name].duplicated().sum()} duplicates in Jobmonitoring matches.")
+        logging.debug(f"{matches[unmatched_wmdf.index.name].duplicated().sum()} duplicates in WMArchive matches.")
+
+        # Drop all matches from unmatched jobs
         unmatched_jmdf = unmatched_jmdf.drop(matches[unmatched_jmdf.index.name])
         unmatched_wmdf = unmatched_wmdf.drop(matches[unmatched_wmdf.index.name])
 
-        print("Matches {}, unmatched from jmdf {}, from wmdf {}".format(matches.shape[0], unmatched_jmdf.shape[0],
-                                                                        unmatched_wmdf.shape[0]))
+        logging.info(f"Found {matches.shape[0]} matches, {unmatched_wmdf.shape[0]} WMArchive jobs unmatched,"
+                     f"{unmatched_jmdf.shape[0]} Jobmonitoring jobs unmatched.")
 
-        self.match_on_workflow(unmatched_jmdf, unmatched_wmdf, jmset.metrics, wmset.metrics)
+        if use_files and 'files' in jmset.extra_dfs and 'files' in jmset.extra_dfs:
+            logging.info(f"Matching on files.")
 
-        if jmfiles is not None and wmfiles is not None:
-            print("Matching on files.")
-
-            file_matches = self.match_on_files(jmset, wmset, jmfiles, wmfiles, unmatched_jmdf, unmatched_wmdf)
+            file_matches = self.match_on_files(jmset, wmset, unmatched_jmdf, unmatched_wmdf)
             matches = matches.append(file_matches)
 
-            unmatched_jmdf = unmatched_jmdf.drop(matches[unmatched_jmdf.index.name])
-            unmatched_wmdf = unmatched_wmdf.drop(matches[unmatched_wmdf.index.name])
+            unmatched_jmdf = unmatched_jmdf.drop(matches[unmatched_jmdf.index.name], errors='ignore')
+            unmatched_wmdf = unmatched_wmdf.drop(matches[unmatched_wmdf.index.name], errors='ignore')
 
-            print("Matches {}, unmatched from jmdf {}, from wmdf {}".format(matches.shape[0], unmatched_jmdf.shape[0],
-                                                                            unmatched_wmdf.shape[0]))
+            logging.debug(f"Found {matches.shape[0]} matches, {unmatched_jmdf.shape[0]} unmatched in Jobmonitoring,"
+                          f"{unmatched_wmdf.shape[0]} unmatched in WMArchive jobs.")
 
-        return pd.concat(match_list)
+        # Directly match on workflow with remaining data
+        workflow_matches = self.match_on_workflow(unmatched_jmdf, unmatched_wmdf, jmset, wmset)
+        matches.append(workflow_matches)
 
-    def filter_matches(self, matches, jm_dataset: JobsDataset, wm_dataset, jmdf_prefix='jmdf_', wmdf_prefix='wmdf_'):
+        return matches.reset_index(drop=True)
 
-        timestamp_metrics = [Metrics.START_TIME, Metrics.STOP_TIME]
+    def filter_matches(self, matches, jm_dataset: Dataset, wm_dataset, jmdf_prefix='jmdf_', wmdf_prefix='wmdf_'):
+
+        timestamp_metrics = [Metric.START_TIME, Metric.STOP_TIME]
 
         for metric in timestamp_metrics:
             jmdf_ts_col = jmdf_prefix + jm_dataset.col(metric)
             wmdf_ts_col = wmdf_prefix + wm_dataset.col(metric)
             matches = matches[
-                (self.abs_timestamp_diff(matches[jmdf_ts_col], matches[wmdf_ts_col]) < self.timestamp_tolerance) |
-                (matches[jmdf_ts_col].isnull()) | (matches[wmdf_ts_col].isnull())]
+                (self.timestamp_diff_series(matches[jmdf_ts_col], matches[wmdf_ts_col]) < self.timestamp_tolerance) #|
+               # (matches[jmdf_ts_col].isnull()) | (matches[wmdf_ts_col].isnull())
+            ]
 
-        jm_workflow_col = jmdf_prefix + jm_dataset.col(Metrics.WORKFLOW)
-        wm_workflow_col = wmdf_prefix + wm_dataset.col(Metrics.WORKFLOW)
+        jm_workflow_col = jmdf_prefix + jm_dataset.col(Metric.WORKFLOW)
+        wm_workflow_col = wmdf_prefix + wm_dataset.col(Metric.WORKFLOW)
 
         # Only accept jobs that match in their workflow
         matches = matches[matches[jm_workflow_col] == matches[wm_workflow_col]]
 
         return matches
 
-    def filter_by_timestamp(self, left, matches, left_metrics, right_metrics):
+    def filter_by_timestamp(self, left, matches, left_dataset, right_dataset, left_prefix='', right_prefix=''):
 
-        timestamp_metrics = [Metrics.START_TIME, Metrics.STOP_TIME]
+        timestamp_metrics = [Metric.START_TIME, Metric.STOP_TIME]
 
         for metric in timestamp_metrics:
-            left_timestamp = left[left_metrics.get(metric)]
+            left_timestamp = left[left_prefix + left_dataset.col(metric)]
+            right_colname = right_prefix + right_dataset.col(metric)
 
-            matches = matches[
-                (self.abs_timestamp_diff(left_timestamp, matches[right_metrics.col(metric)]) < self.timestamp_tolerance) |
-                (matches[left_timestamp].isnull()) | (matches[right_metrics.col(metric)].isnull())]
+            if pd.isna(left_timestamp):
+                # Filter timestamps on the right with specified tolerance, or keep entries if the left timestamp is null
+                matches = matches[matches.apply(
+                    lambda x: self.timestamp_diff(left_timestamp, x[right_colname]) < self.timestamp_tolerance,
+                    axis=1) | matches[right_colname].isnull()]
 
         return matches
 
+    def match_on_cpu_time(self, jm_dataset: Dataset, wm_dataset: Dataset, jm_subset=None, wm_subset=None):
+        jmdf = jm_subset if jm_subset is not None else jm_dataset.df
+        wmdf = wm_subset if wm_subset is not None else wm_dataset.df
 
-    def match_on_cpu_time(self, jm_dataset: JobsDataset, wm_dataset: JobsDataset, jm_subset=None, wm_subset=None):
-
-        jmdf = jm_subset if jm_subset is not None else jm_dataset.jobs
-        wmdf = wm_subset if wm_subset is not None else wm_subset.jobs
-
-        jmdf['cpuApprox'] = jmdf[jm_dataset.col(Metrics.CPU_TIME)].round()
-        wmdf['cpuApprox'] = wmdf[wm_dataset.col(Metrics.CPU_TIME)].round()
+        jmdf['cpuApprox'] = jmdf[jm_dataset.col(Metric.CPU_TIME)].round()
+        wmdf['cpuApprox'] = wmdf[wm_dataset.col(Metric.CPU_TIME)].round()
 
         jmdf_index = jmdf.index.name
         wmdf_index = wmdf.index.name
@@ -141,59 +150,70 @@ class JobReportMatcher:
 
         return perfect_matches[[jmdf_index, wmdf_index]]
 
-    def match_on_workflow(self, jmdf, wmdf, jm_metrics: Metrics, wm_metrics: Metrics):
-
-        jm_grouped = jmdf.groupby(jm_metrics.get(Metrics.WORKFLOW))
-        wm_grouped = wmdf.groupby(wm_metrics.get(Metrics.WORKFLOW))
+    def match_on_workflow(self, jmdf, wmdf, jmset: Dataset, wmset: Dataset):
+        jm_grouped = jmdf.groupby(jmset.col(Metric.WORKFLOW))
+        wm_grouped = wmdf.groupby(wmset.col(Metric.WORKFLOW))
 
         total_compared = 0
         total = jmdf.shape[0]
 
-        match_list = []
+        matches = {jmdf.index.name: [], wmdf.index.name: []}
 
         for key, jm_group in jm_grouped:
-            # try:
-            wm_group = wm_grouped.get_group(key)
-            # except:
-            #     # Group is not present in other frame
-            #     continue
+            try:
+                wm_group = wm_grouped.get_group(key)
+            except KeyError:
+                # Group is not present in other frame
+                continue
 
             if jm_group.empty or wm_group.empty:
                 continue
 
-            print("wmdf {}, jmdf {}".format(len(jm_group), len(wm_group)))
-
             self.prefix_columns(jm_group, 'jmdf_')
             self.prefix_columns(wm_group, 'wmdf_')
 
-            group_matches = []
+            group_match_count = 0
             for jm_index, jm_job in jm_group.iterrows():
-                matching_entries = self.filter_by_timestamp(jm_job, wm_group, jm_metrics, wm_metrics)
+                matching_entries = self.filter_by_timestamp(jm_job, wm_group, jmset, wmset, left_prefix='jmdf_',
+                                                            right_prefix='wmdf_')
 
                 if len(matching_entries) == 1:
-                    group_matches.append((jm_job.index, matching_entries.iloc[0].index))
+                    # Perfect match found, insert into match list
+                    matches.get(jmdf.index.name).append(jm_job.index)
+                    matches.get(wmdf.index.name).append(matching_entries.iloc[0].index)
 
-            match_list += group_matches
-            print("Found {} matches".format(len(group_matches)))
+                    group_match_count += 1
+
             total_compared += len(jm_group)
-            print("total compared {}, fraction {}".format(total_compared, total_compared / total))
+            # logging.debug(
+            #     f"Found {group_match_count} matches (of {len(wm_group)} WM, {len(jm_group)} JM, "
+            #     f"{100 * total_compared / total:.4}% compared)."
+            # )
 
-        return match_list
+        match_df = pd.DataFrame.from_dict(matches)
+        return match_df
 
-
-    def match_on_files(self, jm_dataset: JobsDataset, wm_dataset: JobsDataset, jm_files, wm_files,
-                       jm_subset=None, wm_subset=None):
-
+    def match_on_files(self, jm_dataset: Dataset, wm_dataset: Dataset, jm_subset=None, wm_subset=None):
         jmdf = self.pick_subset(jm_dataset, jm_subset)
         wmdf = self.pick_subset(wm_dataset, wm_subset)
 
         jm_index = jmdf.index.name
         wm_index = wmdf.index.name
 
-        jm_files = jm_files[jm_index.isin(jmdf.index)]
-        wm_files = wm_files[wm_index.isin(wmdf.index)]
+        jm_files = jm_dataset.extra_dfs.get('files')
+        wm_files = wm_dataset.extra_dfs.get('files')
+
+        if jm_files is None or wm_files is None:
+            # Missing file information, skipping matching
+            return None
+
+        jm_files = jm_files[jm_files[jm_index].isin(jmdf.index)]
+        wm_files = wm_files[wm_files[wm_index].isin(wmdf.index)]
 
         possible_matches = self._all_file_matches(jm_files, wm_files, jm_index=jm_index, wm_index=wm_index)
+
+        if possible_matches.empty:
+            return None
 
         self.prefix_columns(jmdf, 'jmdf_')
         self.prefix_columns(wmdf, 'wmdf_')
@@ -205,15 +225,19 @@ class JobReportMatcher:
         return perfect_matches[[jm_index, wm_index]]
 
     @staticmethod
-    def pick_subset(dataset: JobsDataset, subset=None):
-        return subset if subset is not None else dataset.jobs
+    def pick_subset(dataset: Dataset, subset=None):
+        return subset if subset is not None else dataset.df
 
     @staticmethod
     def prefix_columns(df, prefix=''):
         df.columns = map(lambda x: prefix + x, df.columns)
 
     @staticmethod
-    def abs_timestamp_diff(ts_series1, ts_series2):
+    def timestamp_diff(ts1, ts2):
+        return abs((ts1 - ts2).total_seconds())
+
+    @staticmethod
+    def timestamp_diff_series(ts_series1, ts_series2):
         return (ts_series1 - ts_series2).dt.total_seconds().abs()
 
     @staticmethod
@@ -222,13 +246,10 @@ class JobReportMatcher:
         for timestamp_col in ts_cols:
             df[timestamp_col] = df[timestamp_col].dt.floor(freq)
 
-        print("Grouping by {}".format(ts_cols))
         return df.groupby(ts_cols)
 
-    # TODO Refactor this to exclude the explicit index names.
     @staticmethod
     def _all_file_matches(jm_files, wm_files, file_col='FileName', jm_index='UniqueID', wm_index='wmaid'):
-
         matches = jm_files.merge(wm_files, on=file_col, how='inner')
 
         if matches.empty:

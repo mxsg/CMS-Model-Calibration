@@ -10,7 +10,7 @@ def match_jobs_to_node(jobs: pd.DataFrame, nodes: pd.DataFrame):
 
     # job_data = jobs[kept_cols]
 
-    all_job_nodes = jobs.WNHostName.unique()
+    all_job_nodes = jobs.HostName.unique()
     available_hosts = nodes.hostname.unique()
 
     logging.debug("Number of hosts jobs were run on: {}".format(len(all_job_nodes)))
@@ -25,11 +25,11 @@ def match_jobs_to_node(jobs: pd.DataFrame, nodes: pd.DataFrame):
 
     logging.debug("Number of jobs per unmatched job node:")
     # Retrieve number of jobs that cannot be matched
-    logging.debug(", ".join(["node: {}, jobs: {}".format(node, jobs[jobs['WNHostName'] == node].shape[0]) for node in unmatched_job_nodes]))
+    logging.debug(", ".join(["node: {}, jobs: {}".format(node, jobs[jobs['HostName'] == node].shape[0]) for node in unmatched_job_nodes]))
 
     logging.debug("Found {} nodes without jobs.".format(len(nodes_without_jobs)))
 
-    jobs_nodes = pd.merge(jobs, nodes, how='left', left_on='WNHostName', right_on='hostname')
+    jobs_nodes = pd.merge(jobs, nodes, how='left', left_on='HostName', right_on='hostname')
 
     logging.debug("Joined {} job rows to {} node rows, result with {} rows"
                   .format(jobs.shape[0], nodes.shape[0], jobs_nodes.shape[0]))
