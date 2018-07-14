@@ -7,7 +7,7 @@ from data.dataset import Dataset, Metric
 
 
 class JobReportMatcher:
-
+    """ Matcher  """
     def __init__(self, timestamp_tolerance=10, time_grouping_freq='D'):
         self.timestamp_tolerance = timestamp_tolerance
         self.time_grouping_freq = time_grouping_freq
@@ -16,7 +16,7 @@ class JobReportMatcher:
         unmatched_jmdf = jmset.df.copy()
         unmatched_wmdf = wmset.df.copy()
 
-        # TODO Make this generic to exclude data from either
+        # TODO Make this generic to exclude data from either data set
         # Exclude crab jobs as they are not present in the other data set
         unmatched_jmdf = unmatched_jmdf[unmatched_jmdf[jmset.col(Metric.SUBMISSION_TOOL)] != 'crab3']
 
@@ -33,8 +33,8 @@ class JobReportMatcher:
         only_wm = wm_workflows - jm_workflows
         only_jm = jm_workflows - wm_workflows
 
-        logging.debug(f"Removed {len(only_wm)} workflows not present WMArchive data.")
-        logging.debug(f"Removed {len(only_jm)} workflows not present in Jobmonitoring data.")
+        logging.debug("Removed {} workflows not present WMArchive data.".format(len(only_wm)))
+        logging.debug("Removed {} workflows not present in Jobmonitoring data.".format(len(only_jm)))
 
         # Group by day
         jm_grouped = self.group_by_time(unmatched_jmdf, [jmset.col(Metric.STOP_TIME)], freq=self.time_grouping_freq)
@@ -59,24 +59,27 @@ class JobReportMatcher:
 
             total_compared += len(jm_group)
             logging.debug(
-                f"Found {len(group_matches)} matches (of {len(wm_group)} WM, {len(jm_group)} JM, "
-                f"{100 * total_compared / total:.4}% compared)."
+                "Found {} matches (of {} WM, {} JM, ".format(len(group_matches), len(wm_group), len(jm_group)) +
+                "{:.4}% compared).".format(100 * total_compared / total)
             )
 
         matches = pd.concat(match_list)
 
-        logging.debug(f"{matches[unmatched_jmdf.index.name].duplicated().sum()} duplicates in Jobmonitoring matches.")
-        logging.debug(f"{matches[unmatched_wmdf.index.name].duplicated().sum()} duplicates in WMArchive matches.")
+        logging.debug(
+            "{} duplicates in Jobmonitoring matches.".format(matches[unmatched_jmdf.index.name].duplicated().sum()))
+        logging.debug(
+            "{} duplicates in WMArchive matches.".format(matches[unmatched_wmdf.index.name].duplicated().sum()))
 
         # Drop all matches from unmatched jobs
         unmatched_jmdf = unmatched_jmdf.drop(matches[unmatched_jmdf.index.name])
         unmatched_wmdf = unmatched_wmdf.drop(matches[unmatched_wmdf.index.name])
 
-        logging.info(f"Found {matches.shape[0]} matches, {unmatched_wmdf.shape[0]} WMArchive jobs unmatched,"
-                     f"{unmatched_jmdf.shape[0]} Jobmonitoring jobs unmatched.")
+        logging.info(
+            "Found {} matches, {} WMArchive jobs unmatched,".format(matches.shape[0], unmatched_wmdf.shape[0]) +
+            "{} Jobmonitoring jobs unmatched.".format(unmatched_jmdf.shape[0]))
 
         if use_files and 'files' in jmset.extra_dfs and 'files' in jmset.extra_dfs:
-            logging.info(f"Matching on files.")
+            logging.info("Matching on files.")
 
             file_matches = self.match_on_files(jmset, wmset, unmatched_jmdf, unmatched_wmdf)
             matches = matches.append(file_matches)
@@ -84,8 +87,9 @@ class JobReportMatcher:
             unmatched_jmdf = unmatched_jmdf.drop(matches[unmatched_jmdf.index.name], errors='ignore')
             unmatched_wmdf = unmatched_wmdf.drop(matches[unmatched_wmdf.index.name], errors='ignore')
 
-            logging.debug(f"Found {matches.shape[0]} matches, {unmatched_jmdf.shape[0]} unmatched in Jobmonitoring,"
-                          f"{unmatched_wmdf.shape[0]} unmatched in WMArchive jobs.")
+            logging.debug(
+                "Found {} matches, {} unmatched in Jobmonitoring,".format(matches.shape[0], unmatched_jmdf.shape[0]) +
+                "{} unmatched in WMArchive jobs.".format(unmatched_wmdf.shape[0]))
 
         # Directly match on workflow with remaining data
         workflow_matches = self.match_on_workflow(unmatched_jmdf, unmatched_wmdf, jmset, wmset)
@@ -101,8 +105,8 @@ class JobReportMatcher:
             jmdf_ts_col = jmdf_prefix + jm_dataset.col(metric)
             wmdf_ts_col = wmdf_prefix + wm_dataset.col(metric)
             matches = matches[
-                (self.timestamp_diff_series(matches[jmdf_ts_col], matches[wmdf_ts_col]) < self.timestamp_tolerance) #|
-               # (matches[jmdf_ts_col].isnull()) | (matches[wmdf_ts_col].isnull())
+                (self.timestamp_diff_series(matches[jmdf_ts_col], matches[wmdf_ts_col]) < self.timestamp_tolerance)  # |
+                # (matches[jmdf_ts_col].isnull()) | (matches[wmdf_ts_col].isnull())
             ]
 
         jm_workflow_col = jmdf_prefix + jm_dataset.col(Metric.WORKFLOW)
@@ -133,6 +137,7 @@ class JobReportMatcher:
         jmdf = jm_subset if jm_subset is not None else jm_dataset.df
         wmdf = wm_subset if wm_subset is not None else wm_dataset.df
 
+        # Round CPU time to account for rounding errors while matching float values
         jmdf['cpuApprox'] = jmdf[jm_dataset.col(Metric.CPU_TIME)].round()
         wmdf['cpuApprox'] = wmdf[wm_dataset.col(Metric.CPU_TIME)].round()
 
@@ -185,10 +190,6 @@ class JobReportMatcher:
                     group_match_count += 1
 
             total_compared += len(jm_group)
-            # logging.debug(
-            #     f"Found {group_match_count} matches (of {len(wm_group)} WM, {len(jm_group)} JM, "
-            #     f"{100 * total_compared / total:.4}% compared)."
-            # )
 
         match_df = pd.DataFrame.from_dict(matches)
         return match_df
