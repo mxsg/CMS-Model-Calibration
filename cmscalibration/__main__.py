@@ -59,12 +59,11 @@ def main():
 def setup_logging():
     # Setup logging to file and the console
     log_path = "log"
+    os.makedirs(log_path, exist_ok=True)
 
     # Log into file with current date and time
     now = datetime.now()
     log_name = "logfile_{}".format(now.strftime('%Y-%m-%d_%H-%M-%S'))
-    log_path = os.path.join(log_path, log_name)
-    os.makedirs(log_path, exist_ok=True)
 
     logging.basicConfig(
         format='%(asctime)s [%(levelname)-5.5s]  %(message)s',
