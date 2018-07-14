@@ -1,8 +1,9 @@
 #!/usr/bin/env python
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 import ast
 import json
+
 
 def main():
     # Import file
@@ -21,10 +22,10 @@ def main():
     pretty_record = json.dumps(wmarchive_record, indent=4)
     print(pretty_record)
 
-
     with open('example_wmarchive.json', 'w') as f:
         f.write(pretty_record)
         f.write('\n')
+
 
 if __name__ == '__main__':
     main()
