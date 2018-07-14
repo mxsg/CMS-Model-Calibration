@@ -5,7 +5,7 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 
-from analysis import cpuefficiencyanalysis
+import analysis.jobreportanalysis
 from analysis import demandextraction
 from analysis import jobreportanalysis
 from analysis import nodeanalysis
@@ -99,8 +99,8 @@ def run():
     cpu_eff_importer = CPUEfficienciesImporter()
     cpu_eff_df = cpu_eff_importer.importDataFromFile('./data/gridka_cpu_over_walltime.csv')
 
-    cpu_efficiency_data = cpuefficiencyanalysis.compute_average_cpu_efficiency(cpu_eff_df, start=start_date,
-                                                                               end=end_date)
+    cpu_efficiency_data = analysis.jobreportanalysis.compute_average_cpu_efficiency(cpu_eff_df, start=start_date,
+                                                                                    end=end_date)
     # cpu_efficiency_data = cpuefficiencyanalysis.compute_average_cpu_efficiency(cpu_eff_df)
     logging.debug(
         "CPU Efficiency total from {} to {} (from GridKa perspective, with Pilots): {}".format(start_date, end_date,
