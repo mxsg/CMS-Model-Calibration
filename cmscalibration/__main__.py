@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 
+import importlib
 import logging
 import os
 import sys
 from datetime import datetime
-import importlib
 
 import numpy as np
 import pandas as pd
+
 from utils import config
-from workflows import gridka_calibration
 
 
 def main():
