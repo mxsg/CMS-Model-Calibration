@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 import analysis.jobreportanalysis
-from analysis import demandextraction, visualization
+from analysis import demandextraction, visualization, cpuefficiency
 from analysis import jobreportanalysis
 from analysis import nodeanalysis
 from analysis import sampling
@@ -19,7 +19,6 @@ from importers.wmaimport import SummarizedWMAImporter
 from data.dataset import Metric
 from merge import job_node
 from utils import config
-from validation import cpuefficiency
 from utils.report import ReportBuilder
 
 
