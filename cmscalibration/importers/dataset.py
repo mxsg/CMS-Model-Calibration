@@ -3,13 +3,12 @@ import os
 
 import pandas as pd
 
-
-# from ..interfaces.filedataimporter import FileDataImporter
+from interfaces.fileimport import FileDataImporter
 
 
 class DatasetDescription:
     """
-    Manages a set of files containing data that may be split up into different time periods and allows
+    Manages a set of files containing data that may be split up into different time periods and allows to import them.
     """
 
     def __init__(self, description_path):
@@ -41,23 +40,23 @@ class DatasetDescription:
 
         # Find all files with intersecting periods
         matches = df[(df['start'] < start) & (df['end'] > start) |  # Starts before
-                     (df['start'] < end) & (df['end'] > start) |    # Ends after
-                     (df['start'] >= start) & (df['end'] <= end)]   # Is inside
+                     (df['start'] < end) & (df['end'] > start) |  # Ends after
+                     (df['start'] >= start) & (df['end'] <= end)]  # Is inside
 
         return matches['file'].tolist()
 
 
 class DatasetImporter:
-    def __init__(self, file_data_importer):
+    def __init__(self, file_data_importer: FileDataImporter):
         self._importer = file_data_importer
 
     def import_dataset(self, dataset_description_path, start_date, end_date):
         base_path = os.path.dirname(dataset_description_path)
-        description = DatasetDescription(dataset_description_path)
 
+        description = DatasetDescription(dataset_description_path)
         file_names = description.files_for_period(start_date, end_date)
         file_paths = [os.path.join(base_path, name) for name in file_names]
 
-        dataset = self._importer.from_file_list(file_paths)
+        dataset = self._importer.import_file_list(file_paths, start_date, end_date)
 
         return dataset
