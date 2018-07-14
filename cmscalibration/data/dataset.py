@@ -11,6 +11,7 @@ class Metric(Enum):
     """
     # Performance data
     CPU_TIME = 'CPUTime'
+    CPU_TIME_PER_CORE = 'CPUTimePerCore'
     WALL_TIME = 'WallTime'
     USED_CORES = 'UsedCores'
 

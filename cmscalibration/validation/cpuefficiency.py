@@ -4,7 +4,7 @@ wrap_cpu = Metric.CPU_TIME.value
 wrap_wc = Metric.WALL_TIME.value
 
 core_count = Metric.USED_CORES.value
-cpu_time_per_core = 'CPUTimePerCore'
+cpu_time_per_core = Metric.CPU_TIME_PER_CORE
 
 
 def cpu_efficiency(df, include_zero_cpu=False):
