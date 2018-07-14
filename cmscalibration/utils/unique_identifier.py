@@ -20,4 +20,4 @@ def hash_builtin(row, columns):
 
 def hash_columns(df, columns):
     # return df.apply(lambda x: hash_values([x[column] for column in columns]), axis='columns')
-    return df.apply(lambda x: hash_builtin(x, columns), axis=1)
+    return df.apply(lambda x: hash_row(x, columns), axis=1)
