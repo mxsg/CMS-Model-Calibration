@@ -2,13 +2,12 @@ import logging
 
 import numpy as np
 import pandas as pd
-from analysis import jobtypesplit
+
+from data.dataset import Metric
 from utils import histogram
 from utils import stoex
-from data.dataset import Metric
 
 
-# TODO Put this into another module?
 def extract_demands(df):
     demands_list = []
 
@@ -26,7 +25,6 @@ def extract_demands(df):
 
     for name, jobs_of_type in df_types.items():
         demands_dict = {'typeName': name}
-        # TODO This should be more general
 
         counts, bins = extract_cpu_demand_distribution(jobs_of_type)
         demands_dict['cpuDemandStoEx'] = stoex.hist_to_doublepdf(counts, bins)
@@ -45,10 +43,6 @@ def extract_demands(df):
 
         demands_list = demands_list + [demands_dict]
 
-    # This filters jobs by only analyzing those of a type of the frequency at least shown here
-    # min_rel_type_frequency = 0.0001
-    # df_filtered = filter_df_by_type(df_filtered, min_rel_type_frequency)
-
     return demands_list
 
 
@@ -64,27 +58,6 @@ def extract_io_demand_distribution(df, demand_col='CPUIdleTime', bin_count=100):
 
     counts, bins = bin_equal_width_overflow(df[demand_col], bin_count=100)
     return counts, bins
-
-    # logging.debug(
-    #     "CPU Demands in Data: min {}, max {}, mean {}".format(df[demand_col].min(), df[demand_col].max(),
-    #                                                           df[demand_col].mean()))
-    #
-    # cutoff_demand = df[demand_col].quantile(percentile_cutoff)
-    # df_cutoff = df[df[demand_col] <= cutoff_demand]
-    #
-    # logging.debug(
-    #     "CPU demands after cutoff: min {}, max {}, mean {}".format(df_cutoff[demand_col].min(),
-    #                                                                df_cutoff[demand_col].max(),
-    #                                                                df_cutoff[demand_col].mean()))
-
-    # quantiles = df_cutoff[demand_col].quantile(np.linspace(0.0, 1.0, num=bin_count + 1))
-    # bin_edges = [0.0] + quantiles.tolist()
-
-    # hist, bins = pd.cut(df_cutoff[demand_col], bin_edges, right=False, include_lowest=True, duplicates='drop',
-    #                     retbins=True)
-    # rel_hist = hist / hist.sum()
-
-    # return hist, bins
 
 
 def bin_by_quantile(x, bin_count=100):

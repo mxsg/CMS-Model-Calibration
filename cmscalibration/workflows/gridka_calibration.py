@@ -38,8 +38,8 @@ def run():
 
     nodes = GridKaNodeDataImporter().importDataFromFile(config.node_info)
 
-    nodeanalysis.addPerformanceData(nodes)
-    node_types = nodeanalysis.extractNodeTypes(nodes)
+    nodeanalysis.add_performance_data(nodes)
+    node_types = nodeanalysis.extract_node_types(nodes)
 
     scaled_nodes = nodeanalysis.scale_site_by_benchmark(node_types, 0.22888333333)
     # scaled_nodes = nodeanalysis.scaleSiteWithNodeTypes(node_types, 0.20)

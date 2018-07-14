@@ -1,5 +1,6 @@
 """ Framework specific error classes. """
 
+
 class MissingColumnError(Exception):
     """ Indicates that a column is missing for this operation. """
 

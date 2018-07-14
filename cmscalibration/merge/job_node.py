@@ -4,12 +4,6 @@ import pandas as pd
 
 
 def match_jobs_to_node(jobs: pd.DataFrame, nodes: pd.DataFrame):
-    # kept_cols = ["WNHostName", "NCores", "Type", "WrapCPU", "WrapWC", "StartedRunningTimeStamp", "FinishedTimeStamp",
-    #                "JobType", "GenericType", "TaskMonitorId", "NEvReq", "NEvProc", "SubmissionTool",
-    #                "ApplicationVersion", "Application"]
-
-    # job_data = jobs[kept_cols]
-
     all_job_nodes = jobs.HostName.unique()
     available_hosts = nodes.hostname.unique()
 
@@ -29,6 +23,7 @@ def match_jobs_to_node(jobs: pd.DataFrame, nodes: pd.DataFrame):
 
     logging.debug("Found {} nodes without jobs.".format(len(nodes_without_jobs)))
 
+    # Merge jobs and nodes tables
     jobs_nodes = pd.merge(jobs, nodes, how='left', left_on='HostName', right_on='hostname')
 
     logging.debug("Joined {} job rows to {} node rows, result with {} rows"

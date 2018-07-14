@@ -7,7 +7,7 @@ import pandas as pd
 
 from analysis import cpuefficiencyanalysis
 from analysis import demandextraction
-from analysis import jobmonitoring
+from analysis import jobreportanalysis
 from analysis import nodeanalysis
 from analysis import sampling
 from exporters import demandexport
@@ -25,7 +25,7 @@ from utils.report import ReportBuilder
 
 def run():
 
-    report = ReportBuilder(base_path='./out', filename='report.md')
+    report = ReportBuilder(base_path=config.output_directory, filename='calibration-report.md')
 
     report.append('# GridKa Calibration Run')
     report.append('at {}'.format(datetime.now().strftime('%Y-%m-%d, %H:%M:%S')))
@@ -34,7 +34,7 @@ def run():
     end_date = pd.to_datetime(config.end_date)
 
     report.append("")
-    report.append("Start date: {}\n\nEnd date: {}".format(start_date, end_date))
+    report.append("Start date: {}  \nEnd date: {}".format(start_date, end_date))
 
     # Timezone correction correct for errors in timestamps of JobMonitoring data
     dataset_importer = DatasetImporter(
@@ -49,11 +49,11 @@ def run():
     jobs = jm_dataset.df
 
     nodes = GridKaNodeDataImporter().importDataFromFile('./data/gridka-benchmarks-2017.csv')
-    nodeanalysis.addPerformanceData(nodes)
+    nodeanalysis.add_performance_data(nodes)
 
     matched_jobs = job_node.match_jobs_to_node(jm_dataset.df, nodes)
 
-    job_data = jobmonitoring.add_performance_data(matched_jobs)
+    job_data = jobreportanalysis.add_jobmonitoring_performance_data(matched_jobs)
 
 
 
@@ -92,7 +92,7 @@ def run():
 
 
 
-    node_types = nodeanalysis.extractNodeTypes(nodes)
+    node_types = nodeanalysis.extract_node_types(nodes)
     scaled_nodes = nodeanalysis.scale_site_by_jobslots(node_types, cms_avg_cores)
     # scaled_nodes = nodeanalysis.scaleSiteWithNodeTypes(node_types, 0.20)
 
@@ -284,6 +284,5 @@ def run():
                                                                                                            end_date,
                                                                                                            cpu_efficiency_data))
 
-    report.append('Model calibration finished')
-
+    # Write report out to disk
     report.write()

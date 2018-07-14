@@ -8,10 +8,14 @@ from interfaces.fileimport import FileDataImporter
 
 class DatasetDescription:
     """
-    Manages a set of files containing data that may be split up into different time periods and allows to importers them.
+    Manages a set of files containing data that is be split up into files containing different time periods.
+    Such a dataset is described in a JSON description file which is loaded upon construction of the dataset description
+    instance.
     """
 
     def __init__(self, description_path):
+        """Construct a new dataset description by loading it from a JSON file."""
+
         with open(description_path, 'r') as file:
             description = json.load(file)
 

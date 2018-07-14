@@ -3,7 +3,7 @@ import logging
 import numpy as np
 
 
-def addPerformanceData(df):
+def add_performance_data(df):
     df['HSScorePerCore'] = df['hs06'] / df['cores']
     df['HSScorePerJobslot'] = df['hs06'] / df['jobslots']
 
@@ -13,7 +13,7 @@ def addPerformanceData(df):
     df['coresLogical'] = df.apply(lambda x: logical_cores(x['cores'], x['jobslots']), axis='columns')
 
 
-def extractNodeTypes(df):
+def extract_node_types(df):
     # columns that the data have to be grouped by to retrieve the different node types
     grouped_cols = ['cpu model',
                     'jobslots',

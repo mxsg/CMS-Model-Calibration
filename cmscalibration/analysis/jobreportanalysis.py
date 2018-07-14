@@ -3,7 +3,7 @@ import logging
 import numpy as np
 
 
-def add_performance_data(df):
+def add_jobmonitoring_performance_data(df):
     wrap_cpu = 'CPUTime'
     wrap_wc = 'WallTime'
     job_type = 'JobType'

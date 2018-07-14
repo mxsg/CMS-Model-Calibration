@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from analysis import cpuefficiencyanalysis
 from analysis import demandextraction
-from analysis import jobmonitoring
+from analysis import jobreportanalysis
 from analysis import nodeanalysis
 from exporters import demandexport
 from exporters import nodetypes
@@ -25,11 +25,11 @@ def run_workflow():
     node_importer = GridKaNodeDataImporter()
     nodes = node_importer.importDataFromFile('./data/gridka-benchmarks-2017.csv')
 
-    nodeanalysis.addPerformanceData(nodes)
+    nodeanalysis.add_performance_data(nodes)
 
     matched_jobs = job_node.match_jobs_to_node(jobs, nodes)
 
-    job_data = jobmonitoring.add_performance_data(matched_jobs)
+    job_data = jobreportanalysis.add_jobmonitoring_performance_data(matched_jobs)
 
     cpu_efficiency = cpuefficiency.cpu_efficiency(job_data)
     logging.info("Total CPU time / Walltime efficiency: {}".format(cpu_efficiency))
@@ -63,7 +63,7 @@ def run_workflow():
 
     logging.info("Mean number of slots for CMS: {}".format(cms_avg_cores))
 
-    node_types = nodeanalysis.extractNodeTypes(nodes)
+    node_types = nodeanalysis.extract_node_types(nodes)
     scaled_nodes = nodeanalysis.scale_site_by_jobslots(node_types, cms_avg_cores)
     # scaled_nodes = nodeanalysis.scaleSiteWithNodeTypes(node_types, 0.20)
 
