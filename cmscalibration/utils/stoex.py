@@ -1,7 +1,8 @@
+""" Utilities to convert distributions to Palladio stochastic expressions. """
+
+
 def hist_to_doublepdf(counts, bins):
-    """
-    Converts a histogram to a double PDF Stochastic Expression.
-    """
+    """ Convert a histogram to a double PDF Stochastic Expression. """
     if len(counts) + 1 != len(bins):
         raise ValueError("Mismatching bin and value lengths for histogram.")
 
@@ -11,12 +12,13 @@ def hist_to_doublepdf(counts, bins):
 
     keyword = "DoublePDF"
 
-    # TODO Was: "({:.8f};{:.8f})"
     components = ['({};{})'.format(edge, count) for (edge, count) in zip(right_edges, relative_counts)]
     return '{}[{}]'.format(keyword, ''.join(components))
 
 
 def to_intpmf(values, counts, simplify=True):
+    """ Convert an integer probability mass function to a stochastic expression. """
+
     if len(counts) != len(values):
         raise ValueError("Mismatching number of values and counts.")
     if len(values) == 0:

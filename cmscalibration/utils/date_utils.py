@@ -1,12 +1,13 @@
-#!/usr/bin/env python
-#-*- coding: utf-8 -*-
+""" Utilities for date calculations. """
 
-import time
 import datetime
+import time
 
-def constructDateList(start=None, num=1):
+
+def construct_date_list(start=None, num=1):
+    """ Construct a list of string dates in the format YYYYMMDD from a start date and a number of days. """
     if not start:
-        start = time.strftime("%Y%m%d", time.gmtime(time.time() - num*60*60*24))
+        start = time.strftime("%Y%m%d", time.gmtime(time.time() - num * 60 * 60 * 24))
 
     elif len(start) != 8:
         raise Exception("Date is not in expected format!")
