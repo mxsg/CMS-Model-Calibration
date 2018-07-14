@@ -5,6 +5,7 @@ import pandas as pd
 from analysis import jobtypesplit
 from utils import histogram
 from utils import stoex
+from data.dataset import Metric
 
 
 # TODO Put this into another module?
@@ -13,7 +14,7 @@ def extract_demands(df):
 
     df_filtered = filter_invalid_data(df)
 
-    df_dict_by_type = jobtypesplit.split_by_column_value(df_filtered, 'Type', copy=True)
+    df_dict_by_type = jobtypesplit.split_by_column_value(df_filtered, Metric.JOB_TYPE.value, copy=True)
 
     total_entries = df_filtered.shape[0]
 
@@ -133,10 +134,10 @@ def filter_invalid_data(df):
     logging.debug("Number of entries before: {}".format(df.shape[0]))
 
     # Remove data with zero walltime but nonzero CPU time
-    df_subset = df.drop(df[(df['WrapCPU'] > 0) & (df['WrapWC'] <= 0)].index)
+    df_subset = df.drop(df[(df[Metric.WALL_TIME.value] > 0) & (df[Metric.CPU_TIME.value] <= 0)].index)
 
     # Remove data with zero CPU time but non-zero Walltime
-    df_subset = df_subset.drop(df_subset[(df_subset['WrapCPU'] <= 0) & (df_subset['WrapWC'] > 0)].index)
+    df_subset = df_subset.drop(df_subset[(df_subset[Metric.CPU_TIME.value] <= 0) & (df_subset[Metric.WALL_TIME.value] > 0)].index)
 
     logging.debug("Number of entries after: {}".format(df_subset.shape[0]))
 
@@ -145,13 +146,13 @@ def filter_invalid_data(df):
 
 def filter_df_by_type(df, min_rel_freq):
     filtered_frequencies = filter_job_frequencies(df, min_rel_freq)
-    filtered_df = df.loc[df['Type'].isin(filtered_frequencies.index)].copy()
+    filtered_df = df.loc[df[Metric.JOB_TYPE.value].isin(filtered_frequencies.index)].copy()
 
     return filtered_df, filtered_frequencies
 
 
 def filter_job_frequencies(df, min_rel_freq):
-    rel_frequencies = df['Type'].value_counts() / len(df)
+    rel_frequencies = df[Metric.JOB_TYPE.value].value_counts() / len(df)
 
     filtered_frequencies = rel_frequencies[rel_frequencies < min_rel_freq]
 
@@ -161,4 +162,4 @@ def filter_job_frequencies(df, min_rel_freq):
 
 
 def extract_jobslot_distribution(df):
-    return df['NCores'].value_counts().sort_index()
+    return df[Metric.USED_CORES.value].value_counts().sort_index()

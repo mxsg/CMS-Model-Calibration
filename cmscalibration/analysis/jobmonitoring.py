@@ -5,10 +5,10 @@ import numpy as np
 
 def add_performance_data(df):
     required_columns = []
-    wrap_cpu = 'WrapCPU'
-    wrap_wc = 'WrapWC'
-    job_type = 'Type'
-    core_count = 'NCores'
+    wrap_cpu = 'CPUTime'
+    wrap_wc = 'WallTime'
+    job_type = 'JobType'
+    core_count = 'UsedCores'
 
     cpu_idle_time = 'CPUIdleTime'
     job_cpu_efficiency = 'OverallJobCPUEfficiency'
@@ -27,14 +27,14 @@ def add_performance_data(df):
                                                                              job_data[job_data[wrap_wc] == 0].shape[0],
                                                                              job_data[job_data[wrap_wc] < 0].shape[0]))
 
-    logging.debug("NCores summary:\n" + job_data['NCores'].value_counts().to_string())
+    logging.debug("NCores summary:\n" + job_data[core_count].value_counts().to_string())
     logging.debug("Types summary:\n" + job_data[job_type].value_counts().to_string())
 
     # job_data[job_data[wrap_cpu] < 0][wrap_cpu] = np.nan
     # logging.debug("Number of NA values: {}".format(job_data[wrap_cpu].isnull().sum()))
 
-    job_data['CPUTimePerCore'] = job_data['WrapCPU'] / job_data['NCores']
-    job_data['CPUDemand'] = job_data['WrapCPU'] * df['HSScorePerCore']
+    job_data['CPUTimePerCore'] = job_data[wrap_cpu] / job_data[core_count]
+    job_data['CPUDemand'] = job_data[wrap_cpu] * df['HSScorePerCore']
 
     # return "Test2", job_data.dtypes
 
