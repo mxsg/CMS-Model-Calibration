@@ -37,9 +37,7 @@ def run():
     # jobs = jm_importer.importDataFromFile('./data/output_jobmonitoring_2018-03to04.txt')
     jobs = jm_dataset.df
 
-    node_importer = GridKaNodeDataImporter()
-    nodes = node_importer.importDataFromFile('./data/gridka-benchmarks-2017.csv')
-
+    nodes = GridKaNodeDataImporter().importDataFromFile('./data/gridka-benchmarks-2017.csv')
     nodeanalysis.addPerformanceData(nodes)
 
     matched_jobs = job_node.match_jobs_to_node(jm_dataset.df, nodes)

@@ -8,6 +8,8 @@ from utils.calibrationerrors import MissingColumnError
 
 
 class SummarizedWMAImporter(FileDataImporter):
+    """Instances of this class can be used to import WMArchive data from a summarized input format."""
+
     provided_metrics = {
         'startTime': Metric.START_TIME,
         'stopTime': Metric.STOP_TIME,
@@ -35,6 +37,10 @@ class SummarizedWMAImporter(FileDataImporter):
     }
 
     def __init__(self, with_files=True):
+        """Create a new importer.
+
+        :param with_files: If true, also import the file list associated with each row.
+        """
         self.id_column = 'wmaid'
         self.with_files = with_files
 
