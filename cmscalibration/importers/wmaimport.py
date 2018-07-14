@@ -43,7 +43,7 @@ class SummarizedWMAImporter(FileDataImporter):
 
         self.timestamp_columns = ['stopTime', 'startTime', 'ts']
 
-        # Keep track of which columns are required for this to import correctly
+        # Keep track of which columns are required for this to importers correctly
         self.required_columns = set(self.provided_metrics.keys())
         self.required_columns.add(self.id_column)
         if with_files:

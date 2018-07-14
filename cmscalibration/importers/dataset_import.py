@@ -8,7 +8,7 @@ from interfaces.fileimport import FileDataImporter
 
 class DatasetDescription:
     """
-    Manages a set of files containing data that may be split up into different time periods and allows to import them.
+    Manages a set of files containing data that may be split up into different time periods and allows to importers them.
     """
 
     def __init__(self, description_path):

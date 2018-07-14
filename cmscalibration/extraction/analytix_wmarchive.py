@@ -1,17 +1,17 @@
 #!/usr/bin/env python
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
-from subprocess import call
+import datetime
 import sys
+import time
+from subprocess import call
 
 import ConfigParser
-import time
-import datetime
 
 
 def constructDateList(start=None, num=1):
     if not start:
-        start = time.strftime("%Y%m%d", time.gmtime(time.time() - num*60*60*24))
+        start = time.strftime("%Y%m%d", time.gmtime(time.time() - num * 60 * 60 * 24))
 
     elif len(start) != 8:
         raise Exception("Date is not in expected format!")
@@ -21,10 +21,11 @@ def constructDateList(start=None, num=1):
     datelist = [startdatetime + datetime.timedelta(days=i) for i in range(0, num)]
     return [date.strftime('%Y%m%d') for date in datelist]
 
-def main():
-    "Main Function"
 
-    ### General Setup
+def main():
+    """ Main Function """
+
+    # General Setup
 
     # Configuration
     # Todo Replace this with a real configuration file
@@ -45,9 +46,10 @@ def main():
     # Todo Is this needed?
     # call(['kinit'])
 
-    ### Collection of Job Monitoring data
+    # Collection of Job Monitoring data
 
-    dates = constructDateList(config.get('analytix_collection', 'start_date'), config.getint('analytix_collection', 'day_count'))
+    dates = constructDateList(config.get('analytix_collection', 'start_date'),
+                              config.getint('analytix_collection', 'day_count'))
     print("=== Starting with collection from date: {}".format(dates[0]))
 
     print(dates)
@@ -56,12 +58,12 @@ def main():
         fout_path = config.get('analytix_collection', 'hdfs_output_root') + '/wmarchive_full/' + date
 
         # Todo Using the shell functionality is possibly unsafe, but required for CMSSpark to successfully complete
-        exitcode = call('run_spark gridka_wmarchive_full.py' +' --fout=' + fout_path + ' --date=' + date + ' --yarn', shell=True)
-    
+        exitcode = call('run_spark gridka_wmarchive_full.py' + ' --fout=' + fout_path + ' --date=' + date + ' --yarn',
+                        shell=True)
+
         if exitcode != 0:
             print("=== Error while running Spark job for date {}, process exited with code: {}".format(date, exitcode))
             sys.exit(exitcode)
-
 
 
 if __name__ == '__main__':
