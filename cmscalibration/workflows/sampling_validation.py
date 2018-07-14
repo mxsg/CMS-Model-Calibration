@@ -1,6 +1,7 @@
 import logging
 import os
 
+from datetime import datetime
 import numpy as np
 import pandas as pd
 
@@ -19,11 +20,21 @@ from data.dataset import Metric
 from merge import job_node
 from utils import config
 from validation import cpuefficiency
+from utils.report import ReportBuilder
 
 
 def run():
+
+    report = ReportBuilder(base_path='./out', filename='report.md')
+
+    report.append('# GridKa Calibration Run')
+    report.append('at {}'.format(datetime.now().strftime('%Y-%m-%d, %H:%M:%S')))
+
     start_date = pd.to_datetime(config.start_date)
     end_date = pd.to_datetime(config.end_date)
+
+    report.append("")
+    report.append("Start date: {}\n\nEnd date: {}".format(start_date, end_date))
 
     # Timezone correction correct for errors in timestamps of JobMonitoring data
     dataset_importer = DatasetImporter(
@@ -272,3 +283,7 @@ def run():
                     "Total CPU Efficiency from {} to {} (from GridKa perspective, with Pilots): {}".format(start_date,
                                                                                                            end_date,
                                                                                                            cpu_efficiency_data))
+
+    report.append('Model calibration finished')
+
+    report.write()
