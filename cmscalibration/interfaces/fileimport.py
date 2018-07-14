@@ -8,6 +8,9 @@ class FileDataImporter(metaclass=ABCMeta):
     def import_file(self, path, start_date, end_date):
         return NotImplemented
 
+
+class MultiFileDataImporter(FileDataImporter, metaclass=ABCMeta):
+
     @abstractmethod
     def import_file_list(self, path_list, start_date, end_date):
         return NotImplemented

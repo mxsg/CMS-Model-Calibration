@@ -4,12 +4,12 @@ import pandas as pd
 
 from utils.calibrationerrors import MissingColumnError
 from data.dataset import Metric, Dataset
-from interfaces.fileimport import FileDataImporter
+from interfaces.fileimport import MultiFileDataImporter
 from utils import unique_identifier
 from utils.report import ReportingEntity
 
 
-class JMImporter(ReportingEntity, FileDataImporter):
+class JMImporter(ReportingEntity, MultiFileDataImporter):
 
     # TODO Split this up into required and optional columns to be more flexible
     jm_dtypes = {

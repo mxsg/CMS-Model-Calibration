@@ -3,11 +3,11 @@ import logging
 import pandas as pd
 
 from data.dataset import Metric, Dataset
-from interfaces.fileimport import FileDataImporter
+from interfaces.fileimport import MultiFileDataImporter
 from utils.calibrationerrors import MissingColumnError
 
 
-class SummarizedWMAImporter(FileDataImporter):
+class SummarizedWMAImporter(MultiFileDataImporter):
     """Instances of this class can be used to import WMArchive data from a summarized input format."""
 
     provided_metrics = {

@@ -3,7 +3,7 @@ import os
 
 import pandas as pd
 
-from interfaces.fileimport import FileDataImporter
+from interfaces.fileimport import MultiFileDataImporter
 
 
 class DatasetDescription:
@@ -48,7 +48,7 @@ class DatasetDescription:
 
 
 class DatasetImporter:
-    def __init__(self, file_data_importer: FileDataImporter):
+    def __init__(self, file_data_importer: MultiFileDataImporter):
         self._importer = file_data_importer
 
     def import_dataset(self, dataset_description_path, start_date, end_date):

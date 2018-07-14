@@ -2,15 +2,17 @@ import logging
 
 import pandas as pd
 
-from importers.csv import CSVImporter
-from .csv import CSVImporter
+from interfaces.fileimport import FileDataImporter
 
 
-class CPUEfficienciesImporter(CSVImporter):
+class CPUEfficienciesImporter(FileDataImporter):
+    """Imports time series information about CPU efficiencies in the format provided by GridKa."""
+
     def __init__(self):
+        super().__init__()
         self.dropped_columns = []
 
-    def importDataFromFile(self, path):
+    def import_file(self, path, start_date, end_date):
         logging.info("Reading CPU efficiency data from file {}".format(path))
 
         df_raw = pd.read_csv(path, sep=';')
@@ -20,19 +22,14 @@ class CPUEfficienciesImporter(CSVImporter):
 
         logging.info("Raw CPU efficiency file read with shape: {}".format(df_raw.shape))
 
-        df = df_raw
-        # df = df_raw.drop(self.dropped_columns, axis='columns')
-        # df = df.drop_duplicates()
-
-        # df.rename(columns={'Time': 'Timestamp', 'Value': 'CPUEfficiency'}, inplace=True)
+        df = df_raw.drop(self.dropped_columns, axis='columns')
+        df = df.drop_duplicates()
 
         df['Timestamp'] = pd.to_datetime(df['Time'])
-        df['CPUEfficiency'] = df['Value']/100
+        df['CPUEfficiency'] = df['Value'] / 100
 
-        logging.debug("CPU Efficiency dtypes:")
-        logging.debug(df.dtypes)
-
-        logging.debug("Earliest timestamp in cpu efficiencies file: {}, latest: {}".format(df['Timestamp'].min(), df['Timestamp'].max()))
+        # Subset data to match time span
+        df = df[(df['Timestamp'] >= start_date) & (df['Timestamp'] <= end_date)]
 
         logging.info("CPU Efficiency with dropped columns with shape: {}".format(df.shape))
 
@@ -40,17 +37,19 @@ class CPUEfficienciesImporter(CSVImporter):
 
 
 class GridKaNodeDataImporter(CSVImporter):
+    """Imports node information with the format provided by GridKa."""
 
     def __init__(self):
-        self.header = 'hostname,jobslots,hs06,db12-at-boot,db12cpp-at-boot,db12numpy-at-boot,cores,cpu model,interconnect'
+        super().__init__()
+        self.header = \
+            'hostname,jobslots,hs06,db12-at-boot,db12cpp-at-boot,db12numpy-at-boot,cores,cpu model,interconnect'
 
         self.dropped_columns = []
 
-    def importDataFromFile(self, path):
-
+    def import_file(self, path):
         logging.info("Reading GridKa node data from file {}".format(path))
 
-        self.checkHeader(path, self.header)
+        check_header(path, self.header)
 
         df_raw = pd.read_csv(path, sep=',')
 
@@ -67,34 +66,39 @@ class GridKaNodeDataImporter(CSVImporter):
         return df
 
 
-class CoreUsageImporter(CSVImporter):
+class CoreUsageImporter(FileDataImporter):
+    """Imports time series information about the count of used cores in the format provided by GridKa."""
     def __init__(self):
+        super().__init__()
         self.dropped_columns = []
 
-    def importDataFromFile(self, path):
+    def import_file(self, path, start_date, end_date):
         logging.info("Reading Core Usage data from file {}".format(path))
 
-        df_raw = pd.read_csv(path, sep=';')
-
-        logging.debug("Core usage dtypes:")
-        logging.debug(df_raw.dtypes)
-
-        logging.info("Raw core usage file read with shape: {}".format(df_raw.shape))
-
-        df = df_raw
-        # df = df_raw.drop(self.dropped_columns, axis='columns')
-        # df = df.drop_duplicates()
-
-        # df.rename(columns={'Time': 'Timestamp', 'Value': 'CPUEfficiency'}, inplace=True)
+        df = pd.read_csv(path, sep=';')
+        logging.info("Raw core usage file read with shape: {}".format(df.shape))
 
         df['Timestamp'] = pd.to_datetime(df['Time'])
-        # df['Core'] = df['Value']/100
 
-        logging.debug("Core usage dtypes:")
-        logging.debug(df.dtypes)
-
-        logging.debug("Earliest timestamp in core counts file: {}, latest: {}".format(df['Timestamp'].min(), df['Timestamp'].max()))
+        # Subset data to match time span
+        df = df[(df['Timestamp'] >= start_date) & (df['Timestamp'] <= end_date)]
 
         logging.info("Core usage with dropped columns with shape: {}".format(df.shape))
 
         return df
+
+
+def check_header(path, header):
+    """Compare the header of a file with the provided header format."""
+
+    with open(path, 'r') as file:
+        header_line = file.readline().rstrip()
+
+        if header != header_line:
+            logging.warning("Header mismatch in file {}:".format(path))
+            logging.warning("Expected: {}".format(header))
+            logging.warning("Encountered: {}".format(header_line))
+            return False
+        else:
+            logging.debug("Matched expected header format")
+            return True
