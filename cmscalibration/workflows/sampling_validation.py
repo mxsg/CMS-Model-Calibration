@@ -126,7 +126,7 @@ def run():
     os.makedirs(os.path.dirname(filename), exist_ok=True)
     nodetypes.exportToJsonFile(scaled_nodes, filename)
 
-    demands = demandextraction.extract_demands(job_subset)
+    demands = demandextraction.extract_job_demands(job_subset)
 
     # TODO Refactor this into its own method!
     day_count = (end_date - start_date).days
@@ -200,7 +200,7 @@ def run():
 
             nodetypes.exportToJsonFile(scaled_nodes, filename)
 
-            demands = demandextraction.extract_demands(sample)
+            demands = demandextraction.extract_job_demands(sample)
 
             # TODO Refactor this into its own method!
             day_count = (end_date - start_date).days
