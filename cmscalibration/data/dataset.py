@@ -1,14 +1,14 @@
 from enum import Enum
 
+
 class Metric(Enum):
-    """ This contains the possible metrics a dataset can exhibit.
+    """ Contains the possible metrics a dataset can exhibit.
 
     Available metrics currently include ones from the following categories:
     - performance metrics
     - timing information and time stamps
     - entity (e.g., job or node) category information
     """
-
     # Performance data
     CPU_TIME = 'CPUTime'
     WALL_TIME = 'WallTime'
@@ -46,29 +46,20 @@ class Metric(Enum):
     JOB_CATEGORY = 'JobCategory'
 
 
-# TODO Remove this!
-class Metrics:
-    # ID = auto()
-
-    CPU_TIME = 'cpu_time'
-    WALL_TIME = 'wall_time'
-    CORE_COUNT = 'core_count'
-
-    START_TIME = 'start_time'
-    STOP_TIME = 'stop_time'
-    FINISHED_TIME = 'finished_time'
-
-    WORKFLOW = 'workflow'
-    SUBMISSION_TOOL = 'submission_tool'
-
-
 class Dataset:
-    def __init__(self, df, name='dataset', start=None, end=None, sep='#', extra_dfs=dict()):
+    """A dataset is a data frame with additional information associated with it. Besides the main data frame itself,
+    it is named, has a time period the data is valid for and can contain additional data frames as associated info."""
+
+    def __init__(self, df, name='dataset', start=None, end=None, sep='#', extra_dfs=None):
         self.df = df
         self.name = name
         self.start = start
         self.end = end
         self.sep = sep
+
+        if extra_dfs is None:
+            extra_dfs = dict()
+
         self.extra_dfs = extra_dfs
 
     @property
@@ -117,61 +108,3 @@ class Dataset:
             raise ValueError(f'Metric {metric} is not contained in the dataset "{self.name}!"')
         else:
             return metric.value
-
-# TODO Remove this.
-class JobsAndFilesDataSet:
-
-    def __init__(self, jobs, files):
-        self._jobs = jobs
-        self._files = files
-
-    @property
-    def jobs(self):
-        return self._jobs.copy()
-
-    @property
-    def files(self):
-        return self._files.copy()
-
-# TODO Remove this.
-class JobsDataset:
-    def __init__(self, jobs, metric_dict):
-        self._jobs = jobs
-
-        for metric, colname in metric_dict.items():
-            if colname not in jobs.columns:
-                raise ValueError(
-                    "Column name {}, associated to metric {} not found in columns.".format(colname, metric.name))
-
-        self._metrics = metric_dict.copy()
-
-    @property
-    def metrics(self):
-        return self._metrics
-
-    @property
-    def jobs(self):
-        return self._jobs.copy()
-
-    @jobs.setter
-    def jobs(self, jobs):
-        # Check whether all columns that are referenced by metrics exist
-        if not all((value for _, value in self.metrics.items()) in jobs.columns):
-            raise ValueError("Cannot set new jobs frame, not all metrics contained in columns!")
-
-        self._jobs = jobs
-
-    def add_metric(self, metric: Metrics, metric_col: str):
-        if metric_col not in self.jobs.columns:
-            raise ValueError("Cannot set metric {}, column {} not found.".format(metric.name, metric_col))
-
-        if metric in self._metrics:
-            raise ValueError("Cannot set metric {}, already contained in metrics.".format(metric.name))
-
-        self._metrics.update(metric, metric_col)
-
-    def col(self, metric):
-        if metric not in self.metrics:
-            raise ValueError("Metric {} is not contained in metrics.".format(metric.name))
-
-        return self._metrics.get(metric)
