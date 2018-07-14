@@ -45,7 +45,6 @@ def add_jobmonitoring_performance_data(df):
 
     job_data[cpu_idle_time_ratio] = job_data[cpu_idle_time] / max_cpu_time.mask(max_cpu_time <= 0)
 
-    # job_data[job_cpu_efficiency] = (job_data[wrap_cpu]).where(job_data[wrap_wc] > 0.0)
     job_data[job_cpu_efficiency] = job_data[wrap_cpu] / max_cpu_time.mask(max_cpu_time <= 0)
 
     job_data.loc[(job_data[job_cpu_efficiency] < 0) | (job_data[job_cpu_efficiency] > 1), job_cpu_efficiency] = np.nan
@@ -53,3 +52,13 @@ def add_jobmonitoring_performance_data(df):
                                                                job_data[job_cpu_efficiency].max()))
 
     return job_data
+
+
+def compute_average_cpu_efficiency(df, start=None, end=None):
+    if start is not None:
+        df = df[df['Timestamp'] >= start]
+
+    if end is not None:
+        df = df[df['Timestamp'] >= end]
+
+    return df['CPUEfficiency'].mean()
