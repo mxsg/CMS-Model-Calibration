@@ -1,5 +1,6 @@
 import logging
 
+import numpy as np
 import pandas as pd
 
 from interfaces.fileimport import FileDataImporter
@@ -67,6 +68,7 @@ class GridKaNodeDataImporter:
 
 class CoreUsageImporter(FileDataImporter):
     """Imports time series information about the count of used cores in the format provided by GridKa."""
+
     def __init__(self):
         super().__init__()
         self.dropped_columns = []
@@ -85,6 +87,27 @@ class CoreUsageImporter(FileDataImporter):
         logging.info("Core usage with dropped columns with shape: {}".format(df.shape))
 
         return df
+
+    def import_core_share(self, path_total, path_share, start_date, end_date,
+                          share_col='coreShare', partial_col='corePartial', total_col='coreTotal'):
+        """Import core usage information from separate files for total available cores and a share of the cores
+        (e.g. for a single user of the total resource usage).
+        """
+
+        usage_share = self.import_file(path_share, start_date, end_date)
+        usage_total = self.import_file(path_total, start_date, end_date)
+
+        core_usage_cms = usage_share.rename(columns={'Value': partial_col})
+        total_cores = usage_total.rename(columns={'Value': total_col})
+
+        core_df = core_usage_cms[['Timestamp', partial_col]].merge(total_cores[['Timestamp', total_col]],
+                                                                   on='Timestamp')
+        core_df[share_col] = core_df[partial_col] / core_df[total_col]
+
+        # Reset invalid entries
+        core_df[core_df[share_col] > 1] = np.nan
+
+        return core_df
 
 
 def check_header(path, header):
