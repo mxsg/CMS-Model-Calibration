@@ -6,6 +6,8 @@ import numpy as np
 def add_performance_data(df):
     """Add performance information to a dataframe containing node information."""
 
+    df = df.copy()
+
     df['HSScorePerCore'] = df['hs06'] / df['cores']
     df['HSScorePerJobslot'] = df['hs06'] / df['jobslots']
 
@@ -13,6 +15,8 @@ def add_performance_data(df):
         return 2 * physical_cores if jobslots > physical_cores else physical_cores
 
     df['coresLogical'] = df.apply(lambda x: logical_cores(x['cores'], x['jobslots']), axis='columns')
+
+    return df
 
 
 def extract_node_types(df, grouped_cols=None):

@@ -5,7 +5,7 @@ import numpy as np
 from data.dataset import Metric
 
 
-def add_jobmonitoring_performance_data(df):
+def add_performance_data(df):
     """Add performance information to a dataframe containing JobMonitoring job data."""
 
     wrap_cpu = Metric.CPU_TIME.value
