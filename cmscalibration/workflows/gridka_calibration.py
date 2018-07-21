@@ -1,22 +1,19 @@
-import logging
 import os
 from datetime import datetime
 
-import numpy as np
 import pandas as pd
 
-import analysis.jobreportanalysis
-from analysis import demandextraction, calibrationreport, cpuefficiency
+from analysis import demandextraction, calibrationreport
 from analysis import jobreportanalysis
 from analysis import nodeanalysis
-from analysis import sampling
-from data.dataset import Metric
-from exporters.datasetexport import NodeTypeExporter, DemandExporter
+from exporters.datasetexport import CalibrationParameterExporter
 from importers.dataset_import import DatasetImporter
-from importers.gridkadata import CPUEfficienciesImporter, GridKaNodeDataImporter, CoreUsageImporter
+from importers.gridkadata import GridKaNodeDataImporter, CoreUsageImporter
 from importers.jmimport import JMImporter
 from importers.wmaimport import SummarizedWMAImporter
 from merge import job_node
+from merge.merge_datasets import AugmentDatasetMerge
+from merge.reportmatching import JobReportMatcher
 from utils import config
 from utils.report import ReportBuilder
 
@@ -41,200 +38,47 @@ def run():
     wm_dataset = DatasetImporter(SummarizedWMAImporter(with_files=False)) \
         .import_dataset(config.wm_input_dataset, start_date, end_date)
 
-    nodes = GridKaNodeDataImporter().import_file('./data/gridka-benchmarks-2017.csv')
-    nodeanalysis.add_performance_data(nodes)
+    # Match Jobmonitoring and WMArchive job reports
+    matcher = JobReportMatcher(timestamp_tolerance=10, time_grouping_freq='D')
+    matches = matcher.match_reports(jm_dataset, wm_dataset, use_files=False)
 
-    matched_jobs = job_node.match_jobs_to_node(jm_dataset.df, nodes)
+    # Merge datasets using the augment strategy, i.e. using values from the second dataset to replace missing
+    # values in the first.
+    jobs_dataset = AugmentDatasetMerge().merge_datasets(matches, jm_dataset, wm_dataset, left_index='UniqueID',
+                                                        right_index='wmaid')
 
-    job_data = jobreportanalysis.add_jobmonitoring_performance_data(matched_jobs)
+    # Import node information
+    nodes = GridKaNodeDataImporter().import_file(config.node_info)
+    nodes = nodeanalysis.add_performance_data(nodes)
 
-    cpu_efficiency = cpuefficiency.cpu_efficiency(job_data)
-    logging.info("Total CPU time / Walltime efficiency: {}".format(cpu_efficiency))
-    cpu_efficiency_scaled = cpuefficiency.cpu_efficiency_scaled_by_jobslots(job_data)
-    logging.info("Total CPU time / Walltime efficiency scaled by jobslot count and virtual cores: {}".format(
-        cpu_efficiency_scaled))
+    # Match jobs to nodes
+    matched_jobs = job_node.match_jobs_to_node(jobs_dataset.df, nodes)
 
-    cpu_efficiency_scaled_physical = cpuefficiency.cpu_efficiency_scaled_by_jobslots(job_data, physical=True)
-    logging.info("Total CPU time / Walltime efficiency scaled by jobslot count and physical cores: {}".format(
-        cpu_efficiency_scaled_physical))
+    jm_dataset.df = jobreportanalysis.add_performance_data(matched_jobs)
+    job_data = jm_dataset.df
 
+    # Import additional information for usage of GridKa site
     core_importer = CoreUsageImporter()
-    core_usage_cms = core_importer.import_file('./data/core_usage_data_cms.csv', config.start_date, config.end_date)
-    total_cores = core_importer.import_file('./data/total_available_cores.csv', config.start_date, config.end_date)
+    core_df = core_importer.import_core_share('data/total_available_cores.csv', 'data/core_usage_data_cms.csv',
+                                              start_date, end_date,
+                                              share_col='CMSShare', partial_col='CMSCores', total_col='TotalCores')
 
-    core_usage_cms = core_usage_cms.rename(columns={'Value': 'CMSCores'})
-    total_cores = total_cores.rename(columns={'Value': 'TotalCores'})
+    # Compute the average number of cores occupied by CMS in the considered time frame
+    cms_avg_cores = core_df['CMSCores'].mean()
 
-    logging.debug(core_usage_cms.columns)
-
-    core_df = core_usage_cms[['Timestamp', 'CMSCores']].merge(total_cores[['Timestamp', 'TotalCores']], on='Timestamp')
-    core_df['CMSShare'] = core_df['CMSCores'] / core_df['TotalCores']
-    core_df[core_df['CMSShare'] > 1] = np.nan
-
-    logging.info("Total mean share for CMS: {}".format(core_df['CMSShare'].mean()))
-    core_df_timeperiod = core_df[(core_df['Timestamp'] <= end_date) & (core_df['Timestamp'] >= start_date)]
-
-    mean_core_share_in_timeframe = core_df_timeperiod.mean()
-    logging.info(
-        "Mean share for CMS in time frame from {} to {}: {}".format(start_date, end_date, mean_core_share_in_timeframe))
-
-    cms_avg_cores = mean_core_share_in_timeframe['CMSCores']
-
-    logging.info("Mean number of slots for CMS: {}".format(cms_avg_cores))
-
+    # Compute calibration parameters
     node_types = nodeanalysis.extract_node_types(nodes)
     scaled_nodes = nodeanalysis.scale_site_by_jobslots(node_types, cms_avg_cores)
 
-    cpu_eff_importer = CPUEfficienciesImporter()
-    cpu_eff_df = cpu_eff_importer.import_file('./data/gridka_cpu_over_walltime.csv', config.start_date, config.end_date)
+    demands = demandextraction.extract_job_demands(job_data)
 
-    cpu_efficiency_data = analysis.jobreportanalysis.compute_average_cpu_efficiency(cpu_eff_df, start=start_date,
-                                                                                    end=end_date)
-    # cpu_efficiency_data = cpuefficiencyanalysis.compute_average_cpu_efficiency(cpu_eff_df)
-    logging.debug(
-        "CPU Efficiency total from {} to {} (from GridKa perspective, with Pilots): {}".format(start_date, end_date,
-                                                                                               cpu_efficiency_data))
+    parameter_path = os.path.join(config.output_directory, 'parameters')
 
-    out_parent = './out/params'
-
-    # Create full parameter set
-    out_directory = os.path.join(out_parent, "full")
-    info_file = 'info.txt'
-
-    logging.debug("===== Job count before dropping: {}".format(job_data.shape[0]))
-
-    job_subset = job_data[(job_data[Metric.STOP_TIME.value] >= start_date) &
-                          (job_data[Metric.FINISHED_TIME.value] < end_date)].copy()
-
-    # job_subset = job_subset.drop_duplicates(['JobId', 'StartedRunningTimeStamp', 'FinishedTimeStamp'])
-
-    logging.debug("===== Job count after dropping: {}".format(job_subset.shape[0]))
-
-    filename = os.path.join(out_directory, 'nodes.json')
-    os.makedirs(os.path.dirname(filename), exist_ok=True)
-    NodeTypeExporter().export_to_json_file(scaled_nodes, filename)
-
-    demands = demandextraction.extract_job_demands(job_subset)
+    exporter = CalibrationParameterExporter(parameter_path)
+    exporter.export(scaled_nodes, 'nodes.json', demands, 'jobs.json')
 
     # Write jobs to report
-    perf_jobs_dataset = jm_dataset
-    perf_jobs_dataset.df = job_subset
-    calibrationreport.add_jobs_report_section(perf_jobs_dataset, report)
-
-    filename = os.path.join(out_directory, 'jobs.json')
-    os.makedirs(os.path.dirname(filename), exist_ok=True)
-    DemandExporter().export_to_json_file(demands, filename)
-
-    sample_shares = [0.5]
-
-    for sample_share in sample_shares:
-        out_share_dir = os.path.join(out_parent, "share_{}".format(sample_share))
-
-        samples_subdirs = ['sample1', 'sample2']
-        info_file = 'info.txt'
-
-        logging.debug("===== Job count before dropping: {}".format(job_data.shape[0]))
-
-        job_subset = job_data[(job_data[Metric.START_TIME.value] >= start_date) &
-                              (job_data[Metric.FINISHED_TIME.value] < end_date)].copy()
-
-        # job_subset = job_subset.drop_duplicates(['JobId', 'StartedRunningTimeStamp', 'FinishedTimeStamp'])
-
-        logging.debug("===== Job count after dropping: {}".format(job_subset.shape[0]))
-
-        samples = sampling.split_samples(job_subset, frac=sample_share)
-
-        for i, sample in enumerate(samples):
-            out_subdirectory = os.path.join(out_share_dir, samples_subdirs[i])
-            filename = os.path.join(out_subdirectory, 'nodes.json')
-            os.makedirs(os.path.dirname(filename), exist_ok=True)
-
-            NodeTypeExporter().export_to_json_file(scaled_nodes, filename)
-
-            demands = demandextraction.extract_job_demands(sample)
-
-            # TODO Refactor this into its own method!
-            day_count = (end_date - start_date).days
-
-            summary = sample.groupby(Metric.JOB_TYPE.value).size().reset_index()
-            summary.columns = ['Type', 'Count']
-            summary['countPerDay'] = summary['Count'] / day_count
-            summary['relFrequency'] = summary['Count'] / summary['Count'].sum()
-
-            sample_job_count = summary['Count'].sum()
-
-            shares = {job_demands['typeName']: job_demands['relativeFrequency'] for job_demands in demands}
-
-            logging.debug(str(shares))
-
-            filename = os.path.join(out_subdirectory, 'jobs.json')
-            os.makedirs(os.path.dirname(filename), exist_ok=True)
-            DemandExporter().export_to_json_file(demands, filename)
-
-            sample_share = sample_job_count / job_subset.shape[0]
-
-            filename = os.path.join(out_subdirectory, info_file)
-            os.makedirs(os.path.dirname(filename), exist_ok=True)
-            with open(filename, 'w') as file:
-                file.write("Jobs between {} and {}\n".format(start_date, end_date))
-                file.write("Sampled jobs (sampleID {}), {} of total {} entries (share {})\n".format(samples_subdirs[i],
-                                                                                                    sample_job_count,
-                                                                                                    job_subset.shape[0],
-                                                                                                    sample_job_count /
-                                                                                                    job_subset.shape[
-                                                                                                        0]))
-                file.write("\n")
-
-                file.write("Job types (all types):\n")
-                file.write(summary.to_string() + "\n")
-                file.write("\n")
-
-                file.write("Total jobs: {}\n".format(sample_job_count))
-                file.write("Total days: {}\n".format(day_count))
-                file.write("Jobs per day: {}\n".format(summary['countPerDay'].sum()))
-                file.write("All data valid for the single sample, sample share {}\n".format(sample_share))
-                file.write("\n")
-
-                file.write("## Data scaled up for the total data set based on sample share:\n")
-                file.write("Total jobs: {}\n".format(sample_job_count / sample_share))
-                file.write("Total days: {}\n".format(day_count))
-                file.write("Jobs per day: {}\n".format(summary['countPerDay'].sum() / sample_share))
-                file.write("\n")
-
-                cpu_efficiency = cpuefficiency.cpu_efficiency(job_subset)
-                cpu_efficiency_scaled = cpuefficiency.cpu_efficiency_scaled_by_jobslots(job_subset)
-                cpu_efficiency_scaled_physical = cpuefficiency.cpu_efficiency_scaled_by_jobslots(job_subset,
-                                                                                                 physical=True)
-
-                file.write("## Data from job reports (FULL data set):\n")
-                file.write("Total CPU time / Walltime efficiency: {}\n".format(cpu_efficiency))
-                file.write(
-                    "Total CPU time / Walltime efficiency scaled by jobslot count and virtual cores: {}\n".format(
-                        cpu_efficiency_scaled))
-                file.write(
-                    "Total CPU time / Walltime efficiency scaled by jobslot count and physical cores: {}\n".format(
-                        cpu_efficiency_scaled_physical))
-                file.write("Mean number of pilot slots for CMS: {}\n".format(cms_avg_cores))
-                file.write("\n")
-
-                file.write("## Data from job reports (ONLY single sample):\n")
-                cpu_efficiency = cpuefficiency.cpu_efficiency(sample)
-                cpu_efficiency_scaled = cpuefficiency.cpu_efficiency_scaled_by_jobslots(sample)
-                cpu_efficiency_scaled_physical = cpuefficiency.cpu_efficiency_scaled_by_jobslots(sample, physical=True)
-                file.write("Total CPU time / Walltime efficiency: {}\n".format(cpu_efficiency))
-                file.write(
-                    "Total CPU time / Walltime efficiency scaled by jobslot count and virtual cores: {}\n".format(
-                        cpu_efficiency_scaled))
-                file.write(
-                    "Total CPU time / Walltime efficiency scaled by jobslot count and physical cores: {}\n".format(
-                        cpu_efficiency_scaled_physical))
-                file.write("\n")
-
-                file.write("## Data from other sources (FULL data set):\n")
-                file.write(
-                    "Total CPU Efficiency from {} to {} (from GridKa perspective, with Pilots): {}".format(start_date,
-                                                                                                           end_date,
-                                                                                                           cpu_efficiency_data))
+    calibrationreport.add_jobs_report_section(jm_dataset, report)
 
     # Write report out to disk
     report.write()
