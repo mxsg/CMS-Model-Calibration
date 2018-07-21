@@ -11,15 +11,27 @@ class CalibrationParameterExporter:
     def __init__(self, base_path=''):
         self.base_path = base_path
 
+        self.node_exporter = NodeTypeExporter()
+        self.job_exporter = DemandExporter()
+
     def set_path(self, path):
         self.base_path = path
 
-    def export(self, node_types, job_types):
+    def export(self, node_types, node_file_name, job_demands, job_file_name):
         """Export a set of calibration parameters to the specified location."""
 
+        logging.info("Exporting calibration parameters to path {}.".format(self.base_path))
+
         # Make sure the path exists
-        os.makedirs(os.path.dirname(self.base_path, exist_ok=True))
-        pass
+        os.makedirs(self.base_path, exist_ok=True)
+
+        path = os.path.join(self.base_path, node_file_name)
+        self.node_exporter.export_to_json_file(node_types, path)
+
+        path = os.path.join(self.base_path, job_file_name)
+        self.job_exporter.export_to_json_file(job_demands, path)
+
+        logging.info("Finished exporting calibration parameters.")
 
 
 class NodeTypeExporter(JSONExporter):
