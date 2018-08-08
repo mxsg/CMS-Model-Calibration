@@ -26,12 +26,12 @@ def to_intpmf(values, counts, simplify=True):
 
     # If there is only one value, simply return it as a string
     if simplify and len(values) == 1:
-        return str(values[0])
+        return str(int(values[0]))
 
     # Normalize counts to unity
     relative_counts = counts / sum(counts)
 
     keyword = "IntPMF"
 
-    components = ['({};{})'.format(value, count) for (value, count) in zip(values, relative_counts)]
+    components = ['({};{})'.format(int(value), count) for (value, count) in zip(values, relative_counts)]
     return '{}[{}]'.format(keyword, ''.join(components))
