@@ -12,12 +12,18 @@ class ReportBuilder:
 
     def __init__(self, base_path=None, filename=None):
         self.report = ''
+        self.figures = {}
 
         if base_path is None:
             base_path = '.'
         self.base_path = base_path
 
         self.resource_dir = 'figures'
+        self.resource_path = os.path.join(self.base_path, self.resource_dir)
+
+        # Todo Check whether these formats are supported by matplotlib
+        self.image_formats = ['pdf', 'png', 'eps']
+        self.inline_image_format = 'png'
 
         if filename is None:
             now = datetime.now()
@@ -37,7 +43,7 @@ class ReportBuilder:
         """ Append the content to the current report.
         This adds an empty line before and a newline after the string content.
         """
-        self.append('\n')
+        self.append()
         self.append(str(content))
 
     def write(self):
@@ -46,6 +52,35 @@ class ReportBuilder:
 
         with open(report_path, 'w') as f:
             f.write(self.report)
+
+        # Write figures to files
+        os.makedirs(self.resource_path, exist_ok=True)
+
+        for figure_id, (fig, ax) in self.figures.items():
+
+            for image_format in self.image_formats:
+                fig.savefig(os.path.join(self.resource_path, figure_id + '.' + image_format))
+
+    def add_figure(self, fig, axes, identifier):
+        # Maybe refactor into its own class?
+        if identifier in self.figures:
+            raise ValueError("Figure with identical identifier '{}' already included in report!".format(identifier))
+
+        self.figures[identifier] = (fig, axes)
+
+        inline_figure_path = os.path.join(self.resource_dir, identifier + '.' + self.inline_image_format)
+        self.append('![Figure {}]({})'.format(identifier, inline_figure_path))
+        self.append()
+
+        image_links = []
+        for image_format in self.image_formats:
+            figure_path = os.path.join(self.resource_dir, identifier + '.' + image_format)
+
+            image_link = '[{}]({})'.format(image_format, figure_path)
+            image_links.append(image_link)
+
+        self.append("Figure in other image formats: " + ", ".join(image_links))
+        self.append()
 
 
 class CodeBlock:
@@ -67,6 +102,13 @@ class CodeBlock:
             block.extend(self.content)
             block.append('```')
             return '\n'.join(block)
+
+
+class Figure:
+    """A representation of a figure."""
+
+    def __init__(self, fig, axes, title=''):
+        pass
 
 
 class ReportingEntity:
