@@ -1,6 +1,50 @@
+import matplotlib.pyplot as plt
+import pandas as pd
+
 import utils.report as rp
 from analysis import cpuefficiency
 from data.dataset import Dataset, Metric
+
+
+def jobtype_distribution(dataset: Dataset):
+    job_df = dataset.df
+
+    summary = job_df.groupby(Metric.JOB_TYPE.value).size()
+
+    plt.figure()
+    # Plot summary as a series
+    axes = summary.plot.pie(title='Job Count per Type', autopct='%1.1f%%')
+
+    axes.axis('equal')
+    axes.set_ylabel('')
+    axes.legend(title="Job Types")
+
+    fig = axes.get_figure()
+
+    return fig, axes
+    # fig.savefig(path)
+
+
+def jobtypes_over_time(dataset: Dataset):
+    df = dataset.df
+
+    # df = df.set_index(Metric.STOP_TIME.value)
+    # df = df.resample('1H', how='count')
+
+    # Use crosstab to get pivot table with Job types in the columns
+    df = pd.crosstab(index=[df[Metric.STOP_TIME.value]], columns=[df[Metric.JOB_TYPE.value]])
+    df = df.resample('1H').sum()
+
+    # df2 = df.groupby(df[Metric.STOP_TIME.value].dt.hour).count()[Metric.JOB_TYPE.value]
+    # pivot_df = df2.pivot(index=Metric.STOP_TIME.value, columns=Metric)
+
+    # stacked =True
+    plt.figure()
+    axes = df.plot.bar(stacked=True)
+    fig = axes.get_figure()
+
+    return fig, axes
+    # fig.savefig(path)
 
 
 def add_jobs_report_section(dataset: Dataset, report: rp.ReportBuilder):
@@ -29,6 +73,13 @@ def add_jobs_report_section(dataset: Dataset, report: rp.ReportBuilder):
     summary_code = rp.CodeBlock().append(summary.to_string())
     report.append_paragraph(summary_code)
     report.append()
+
+    # Add figures of distribution
+    fig, axes = jobtype_distribution(dataset)
+    report.add_figure(fig, axes, 'jobtypes_pie')
+
+    fig, axes = jobtypes_over_time(dataset)
+    report.add_figure(fig, axes, 'jobtypes_histogram')
 
     # Add general metadata
     report.append("Total jobs: {}  ".format(df.shape[0]))
