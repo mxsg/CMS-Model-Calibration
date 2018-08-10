@@ -120,6 +120,9 @@ class SummarizedWMAImporter(MultiFileDataImporter):
 
         df['task'] = df['task'].str.split('/').apply(lambda x: x[1] if len(x) >= 2 else None)
 
+        # Convert mixed case to lowercase
+        df['jobtype'] = df['jobtype'].str.lower()
+
         # Convert into MiB
         df['readAveragekB'] = df['readAveragekB'] / 1024
 
