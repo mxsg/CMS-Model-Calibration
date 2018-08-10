@@ -6,6 +6,7 @@ import pandas as pd
 from analysis import demandextraction, calibrationreport
 from analysis import jobreportanalysis
 from analysis import nodeanalysis
+from analysis import jobreportcleaning
 from exporters.datasetexport import CalibrationParameterExporter
 from importers.dataset_import import DatasetImporter
 from importers.gridkadata import GridKaNodeDataImporter, CoreUsageImporter
@@ -46,6 +47,8 @@ def run():
     # values in the first.
     jobs_dataset = UnionDatasetMerge().merge_datasets(matches, jm_dataset, wm_dataset, left_index='UniqueID',
                                                       right_index='wmaid', left_suffix='jm', right_suffix='wma')
+
+    jobs_dataset.df = jobreportcleaning.clean_job_reports(jobs_dataset.df)
 
     # Import node information
     nodes = GridKaNodeDataImporter().import_file(config.node_info)
