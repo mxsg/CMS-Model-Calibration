@@ -127,7 +127,8 @@ class SummarizedWMAImporter(MultiFileDataImporter):
         df['readAveragekB'] = df['readAveragekB'] / 1024
 
         # Fill null exit codes with 0
-        df['NumberOfThreads'] = df['NumberOfThreads'].fillna(0)
+        # df['NumberOfThreads'] = df['NumberOfThreads'].fillna(0)
+        df['exitCode'] = df['exitCode'].fillna(0)
 
         return df
 
