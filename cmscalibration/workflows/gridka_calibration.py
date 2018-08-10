@@ -12,7 +12,7 @@ from importers.gridkadata import GridKaNodeDataImporter, CoreUsageImporter
 from importers.jmimport import JMImporter
 from importers.wmaimport import SummarizedWMAImporter
 from merge import job_node
-from merge.merge_datasets import AugmentDatasetMerge
+from merge.merge_datasets import UnionDatasetMerge
 from merge.reportmatching import JobReportMatcher
 from utils import config
 from utils.report import ReportBuilder
@@ -44,8 +44,8 @@ def run():
 
     # Merge datasets using the augment strategy, i.e. using values from the second dataset to replace missing
     # values in the first.
-    jobs_dataset = AugmentDatasetMerge().merge_datasets(matches, jm_dataset, wm_dataset, left_index='UniqueID',
-                                                        right_index='wmaid')
+    jobs_dataset = UnionDatasetMerge().merge_datasets(matches, jm_dataset, wm_dataset, left_index='UniqueID',
+                                                      right_index='wmaid', left_suffix='jm', right_suffix='wma')
 
     # Import node information
     nodes = GridKaNodeDataImporter().import_file(config.node_info)

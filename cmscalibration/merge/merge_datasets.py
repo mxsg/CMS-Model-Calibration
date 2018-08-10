@@ -48,3 +48,66 @@ class AugmentDatasetMerge:
 
         df.loc[df[base_col].isnull(), base_col] = df[augment_col]
         return df
+
+
+class UnionDatasetMerge:
+
+    def __init__(self, part_sep='#'):
+        self.part_sep = part_sep
+
+    def merge_datasets(self, matches, left: Dataset, right: Dataset, left_index, right_index, left_suffix='left',
+                       right_suffix='right'):
+
+        left_df = left.df
+        right_df = right.df
+
+        # Join with matches, preserving all entries in base dataframe
+        # Right is base data frame, so use right merge
+        half_joined = matches.join(left_df, on=left_index, how='right')
+
+        # Preserve all entries, even those not in
+        joined = half_joined.join(right_df, on=right_index, how='outer', lsuffix=left_suffix, rsuffix=right_suffix)
+
+        # Reset index to the original index: ID of the left dataframe
+        # Todo Create new identifier?
+        # joined = joined.set_index(left_index)
+
+        # Todo Join values also
+
+        # Columns that are suffixed are overlapping, included in both data sets
+        for left_col in [col for col in left_df.columns if col.endswith(left_suffix)]:
+            col_name = self.remove_trailing(left_col, left_suffix)
+            right_col = left_col + right_suffix
+
+            if right_col in right_df.columns:
+                self.merge_cols(joined, left_col, left_col + left_suffix, right_col)
+
+        # for right_col in set(right_df.columns) - set(left_df.columns):
+        #     # col_name = self.remove_trailing(right_col, right_suffix)
+        #     joined[right_col] = joined[right_col + right_suffix]
+
+        # Put result back into a dataset
+
+        # Compute union of dates
+        start_date = min(left.start, right.start)
+        end_date = max(left.end, right.end)
+
+        # Only retain extra data frames of the base dataset
+        extra_dfs = left.extra_dfs
+
+        result = Dataset(joined, left.name, start=start_date, end=end_date, sep=self.part_sep, extra_dfs=extra_dfs)
+        return result
+
+    def merge_cols(self, df, result_col, left_col, right_col):
+        """Merge columns into a new column"""
+        df[result_col] = df[left_col]
+        df[result_col] = df[result_col].where(df[result_col].isnull(), df[right_col])
+
+        return df
+
+    @staticmethod
+    def remove_trailing(full_string, trailing=''):
+        trailing_len = len(trailing)
+        if full_string[-trailing_len:] == trailing:
+            return full_string[:-trailing_len]
+        return full_string
