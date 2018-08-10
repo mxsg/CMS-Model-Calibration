@@ -1,3 +1,5 @@
+import logging
+
 from data.dataset import Metric
 
 wrap_cpu = Metric.CPU_TIME.value
@@ -10,14 +12,20 @@ cpu_time_per_core = Metric.CPU_TIME_PER_CORE
 def cpu_efficiency(df, include_zero_cpu=False):
     """Compute the CPU efficiency from a data frame containing job monitoring information."""
 
-    df_filtered = df[df[wrap_wc] > 0]
+    df_filtered = df[df[wrap_wc] > 0].copy()
 
     if include_zero_cpu:
         df_filtered = df_filtered[df_filtered[wrap_cpu] >= 0]
     else:
         df_filtered = df_filtered[df_filtered[wrap_cpu] > 0]
 
-    total_walltime = df_filtered[wrap_wc].dot(df_filtered[core_count])
+    logging.debug("Number of null wrap_wc {}, core count".format(df_filtered[wrap_wc].isnull().sum(),
+                                                                 df_filtered[core_count].isnull().sum()))
+
+    df_filtered['max_cpu_time'] = df_filtered[wrap_wc] * df_filtered[core_count]
+
+    # Do not count NaN values here
+    total_walltime = df_filtered['max_cpu_time'].sum()
 
     total_cpu_time = df_filtered[wrap_cpu].sum()
 
