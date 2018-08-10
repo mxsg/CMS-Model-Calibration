@@ -63,6 +63,49 @@ def add_jobs_report_section(dataset: Dataset, report: rp.ReportBuilder):
 
     df = dataset.df
 
+    # TODO This should be removed again later!
+    report.append("Total job number: {}  ".format(df.shape[0]))
+    report.append("Number of jobs without JobCategory: {}  ".format(df[Metric.JOB_CATEGORY.value].isnull().sum()))
+    report.append("Number of jobs without JobType: {}  ".format(df[Metric.JOB_TYPE.value].isnull().sum()))
+
+    report.append(
+        "Number of jobs without core count information: {}  ".format(df[Metric.USED_CORES.value].isnull().sum()))
+
+    # TODO Summarize all null values in data! (iterate through all columns and sets etc.)
+
+    report.append("### Core count information")
+
+    df_filled = df.copy()
+    df_filled[Metric.USED_CORES.value] = df_filled[Metric.USED_CORES.value].fillna(-1)
+
+    add_frame_to_report(df_filled[Metric.USED_CORES.value].value_counts(), report)
+
+    core_counts_per_workflow = df_filled.groupby(Metric.WORKFLOW.value)[Metric.USED_CORES.value].nunique()
+
+    # Filter out all workflows where all core counts are the same
+    multiple_core_counts = df_filled.groupby(Metric.WORKFLOW.value).filter(
+        lambda x: x[Metric.USED_CORES.value].nunique() != 1)
+
+    # add_frame_to_report(core_counts_per_workflow, report)
+
+    report.append("Overview over ")
+    add_frame_to_report(
+        multiple_core_counts.groupby([Metric.WORKFLOW.value, Metric.USED_CORES.value]).size().unstack(fill_value=0),
+        report)
+
+    category_summary = df.groupby(Metric.JOB_CATEGORY.value).size().reset_index()
+
+    code = rp.CodeBlock().append(category_summary.to_string())
+    report.append_paragraph(code)
+
+    # Fill job types by adding an unknown value
+    df[Metric.JOB_TYPE.value] = df[Metric.JOB_TYPE.value].fillna('++unknown++')
+
+    category_summary = df.groupby([Metric.JOB_CATEGORY.value, Metric.JOB_TYPE.value]).size().reset_index()
+
+    code = rp.CodeBlock().append(category_summary.to_string())
+    report.append_paragraph(code)
+
     # Count number of jobs of each type
     summary = df.groupby(Metric.JOB_TYPE.value).size().reset_index()
     summary.columns = ['type', 'count']
@@ -97,3 +140,13 @@ def add_jobs_report_section(dataset: Dataset, report: rp.ReportBuilder):
 
     cpu_eff = cpuefficiency.cpu_efficiency_scaled_by_jobslots(df, physical=True)
     report.append("Total (CPU time/wall time) efficiency scaled (jobslot + physical cores): {}  ".format(cpu_eff))
+
+    report.append("### Total (CPU time/wall time) efficiency per job type")
+
+    cpu_efficiencies = df.groupby(Metric.JOB_TYPE.value).apply(cpuefficiency.cpu_efficiency)
+    add_frame_to_report(cpu_efficiencies, report)
+
+
+def add_frame_to_report(df, report: rp.ReportBuilder):
+    code = rp.CodeBlock().append(df.to_string())
+    report.append_paragraph(code)
