@@ -1,3 +1,5 @@
+import logging
+
 from data.dataset import Dataset
 
 
@@ -72,15 +74,16 @@ class UnionDatasetMerge:
         # Todo Create new identifier?
         # joined = joined.set_index(left_index)
 
-        # Todo Join values also
+        # Todo Actually join values
 
         # Columns that are suffixed are overlapping, included in both data sets
-        for left_col in [col for col in left_df.columns if col.endswith(left_suffix)]:
+        for left_col in [col for col in joined.columns if col.endswith(left_suffix)]:
             col_name = self.remove_trailing(left_col, left_suffix)
-            right_col = left_col + right_suffix
+            right_col = col_name + right_suffix
 
-            if right_col in right_df.columns:
-                self.merge_cols(joined, left_col, left_col + left_suffix, right_col)
+            # if right_col in right_df.columns:
+            # If suffixed column exists, it also exists in other data set
+            joined = self.merge_cols(joined, col_name, left_col, right_col)
 
         # for right_col in set(right_df.columns) - set(left_df.columns):
         #     # col_name = self.remove_trailing(right_col, right_suffix)
@@ -101,7 +104,11 @@ class UnionDatasetMerge:
     def merge_cols(self, df, result_col, left_col, right_col):
         """Merge columns into a new column"""
         df[result_col] = df[left_col]
-        df[result_col] = df[result_col].where(df[result_col].isnull(), df[right_col])
+        df[result_col] = df[result_col].where(df[result_col].notnull(), df[right_col])
+        logging.debug(
+            "Column {}: left null: {}, right null: {}; result null: {}".format(result_col, df[left_col].isnull().sum(),
+                                                                               df[right_col].isnull().sum(),
+                                                                               df[result_col].isnull().sum()))
 
         return df
 
