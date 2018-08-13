@@ -14,8 +14,8 @@ def main():
     cmsspark_script = 'gridka_wmarchive_selection.py'
 
     start_year = 2018
-    start_month = 1
-    num_months = 6
+    start_month = 7
+    num_months = 1
 
     for i in range(num_months):
         year = start_year + (start_month + i - 1) // 12
