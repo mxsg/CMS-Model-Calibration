@@ -9,7 +9,16 @@ def clean_job_reports(df):
 def _add_missing_core_counts(df):
     df_filled = df.copy()
 
-    # TODO Only fill values where the result is unambiguous because only one non-null core count is present in the workflow.
+    # TODO Improve on this: This only fills values for workflows where the number of cores is unique across the data set
+    # def fill_unique(series):
+    #     if series[series > 0].nunique() == 1:
+    #         unique_value = series.loc[series.first_valid_index()]
+    #         return unique_value
+    #     else:
+    #         return series
+    #
+    # df_filled[Metric.USED_CORES.value] = df_filled.groupby(Metric.WORKFLOW.value)[Metric.USED_CORES.value].transform(
+    #     fill_unique)
 
     df_filled[Metric.USED_CORES.value] = df_filled.groupby(Metric.WORKFLOW.value)[Metric.USED_CORES.value].transform(
         lambda x: x.fillna(x.median()))

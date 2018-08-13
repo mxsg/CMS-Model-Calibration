@@ -46,6 +46,18 @@ def jobtypes_over_time(dataset: Dataset):
     return fig, axes
     # fig.savefig(path)
 
+def demand_histogram(df):
+    x = df['CPUDemand']
+    y = df['CPUIdleTime']
+
+    x_max = x.quantile(0.9)
+    y_max = y.quantile(0.9)
+
+    fig, axes = plt.subplots()
+    axes.hist2d(x, y, bins=50, range=[[0, x_max], [0, y_max]])
+
+    return fig, axes
+
 
 def add_jobs_report_section(dataset: Dataset, report: rp.ReportBuilder):
     """Add a section including general job information to the markdown report."""
@@ -145,6 +157,13 @@ def add_jobs_report_section(dataset: Dataset, report: rp.ReportBuilder):
 
     cpu_efficiencies = df.groupby(Metric.JOB_TYPE.value).apply(cpuefficiency.cpu_efficiency)
     add_frame_to_report(cpu_efficiencies, report)
+
+
+    report.append("### Job Demands")
+
+    jobs_analysis = df[(df[Metric.JOB_TYPE.value] == 'reprocessing') & (df['CPUDemand'].notnull()) & (df['CPUIdleTime'].notnull())]
+    fig, axes = demand_histogram(jobs_analysis)
+    report.add_figure(fig, axes, 'job_demands_analysis')
 
 
 def add_frame_to_report(df, report: rp.ReportBuilder):
