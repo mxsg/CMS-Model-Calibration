@@ -3,6 +3,14 @@ from data.dataset import Metric
 
 def clean_job_reports(df):
     df = _add_missing_core_counts(df)
+    df = _add_missing_walltimes(df)
+    return df
+
+
+def _add_missing_walltimes(df):
+    df = df.copy()
+    df[Metric.WALL_TIME.value] = df[Metric.WALL_TIME.value].fillna(
+        (df[Metric.STOP_TIME.value] - df[Metric.START_TIME.value]).dt.total_seconds())
     return df
 
 
@@ -20,8 +28,9 @@ def _add_missing_core_counts(df):
     # df_filled[Metric.USED_CORES.value] = df_filled.groupby(Metric.WORKFLOW.value)[Metric.USED_CORES.value].transform(
     #     fill_unique)
 
-    df_filled[Metric.USED_CORES.value] = df_filled.groupby(Metric.WORKFLOW.value)[Metric.USED_CORES.value].transform(
-        lambda x: x.fillna(x.median()))
+    # Todo Enable filling of used core counts
+    # df_filled[Metric.USED_CORES.value] = df_filled.groupby(Metric.WORKFLOW.value)[Metric.USED_CORES.value].transform(
+    #     lambda x: x.fillna(x.median()))
 
     # Core counts must be positive, so we can use negative value to fill misssing values
     # df_filled[Metric.USED_CORES.value] = df_filled[Metric.USED_CORES.value].fillna(-1)
