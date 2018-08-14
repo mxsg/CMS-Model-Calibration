@@ -9,12 +9,12 @@ def main():
     ssh_analytix_host = 'analytix'
 
     hdfs_base_path = 'hdfs:///cms/users/mstemmer'
-    hdfs_dataset = 'wmarchive-flattened-json'
+    hdfs_dataset = 'jobmonitoring-alternative'
 
-    cmsspark_script = 'gridka_wmarchive_selection.py'
+    cmsspark_script = 'gridka_jm.py'
 
     start_year = 2018
-    start_month = 7
+    start_month = 5
     num_months = 1
 
     for i in range(num_months):
