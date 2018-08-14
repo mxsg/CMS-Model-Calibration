@@ -19,8 +19,8 @@ def cpu_efficiency(df, include_zero_cpu=False):
     else:
         df_filtered = df_filtered[df_filtered[wrap_cpu] > 0]
 
-    logging.debug("Number of null wrap_wc {}, core count {}".format(df_filtered[wrap_wc].isnull().sum(),
-                                                                    df_filtered[core_count].isnull().sum()))
+    # logging.debug("Number of null wrap_wc {}, core count {}".format(df_filtered[wrap_wc].isnull().sum(),
+    #                                                                 df_filtered[core_count].isnull().sum()))
 
     df_filtered['max_cpu_time'] = df_filtered[wrap_wc] * df_filtered[core_count]
 
