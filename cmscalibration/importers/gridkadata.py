@@ -101,13 +101,40 @@ class CoreUsageImporter(FileDataImporter):
         total_cores = usage_total.rename(columns={'Value': total_col})
 
         core_df = core_usage_cms[['Timestamp', partial_col]].merge(total_cores[['Timestamp', total_col]],
-                                                                   on='Timestamp')
+                                                                   on='Timestamp', how='outer')
         core_df[share_col] = core_df[partial_col] / core_df[total_col]
+
+        core_df.set_index('Timestamp', inplace=True)
 
         # Reset invalid entries
         core_df[core_df[share_col] > 1] = np.nan
 
         return core_df
+
+
+class ColumnCoreUsageImporter(FileDataImporter):
+    """Imports time series information about the count of used cores in the format provided by GridKa."""
+
+    def __init__(self):
+        super().__init__()
+        self.dropped_columns = []
+
+    def import_file(self, path, start_date, end_date):
+        logging.info("Reading Core Usage data from file {}".format(path))
+
+        df = pd.read_csv(path, sep=';')
+        logging.info("Raw core usage file read with shape: {}".format(df.shape))
+
+        df['Timestamp'] = pd.to_datetime(df['Time'])
+
+        # Subset data to match time span
+        df = df[(df['Timestamp'] >= start_date) & (df['Timestamp'] <= end_date)]
+
+        df.set_index('Timestamp', inplace=True)
+
+        logging.info("Core usage with dropped columns with shape: {}".format(df.shape))
+
+        return df
 
 
 def check_header(path, header):
