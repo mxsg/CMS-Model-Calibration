@@ -14,12 +14,21 @@ def mean_jobslot_usage(jobs, start_time, end_time,
 
     df = calculate_jobslot_usage(jobs, start_time, end_time, start_ts_col, end_ts_col, slot_col)
 
-    total_length = df.index.max() - df.index.min()
+    total_length = (df.index.max() - df.index.min()).total_seconds()
 
-    return df[_duration_col].dot(df[_total_slot_col]) / total_length
+    # df = df.copy()
+    # df['temp_multiplied'] = df[_duration_col] * df[_total_slot_col]
+    # return df['temp_multiplied']
+    #
+    # return df[_duration_col].dot(df[_total_slot_col]) / total_length
+
+    # For now, aggregate by resampling the data
+    # Todo Is this accurate?
+    df_upsampled = df.resample('s').pad()
+    return df_upsampled.mean()
 
 
-def calculate_jobslot_usage(jobs, start_time, end_time,
+def calculate_jobslot_usage(jobs, start_time=None, end_time=None,
                             start_ts_col='StartedRunningTimeStamp',
                             end_ts_col='FinishedTimeStamp',
                             slot_col='NCores'):
@@ -35,6 +44,9 @@ def calculate_jobslot_usage(jobs, start_time, end_time,
     # Choose all jobs that end after the start time and start after the end time and hence have an effect
     # on the job slot number in use in the considered time frame.
     jobs = jobs[(jobs[end_ts_col] >= start_time) & (jobs[start_ts_col] <= end_time)]
+
+    # Filter data to only include those that are non-null in both timestamps
+    jobs = jobs[(jobs[start_ts_col].notnull()) & (jobs[end_ts_col].notnull())]
 
     ending_times = jobs[[end_ts_col, slot_col]]
     starting_times = jobs[[start_ts_col, slot_col]]
