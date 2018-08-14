@@ -18,7 +18,7 @@ class JobReportMatcher:
         self.timestamp_tolerance = timestamp_tolerance
         self.time_grouping_freq = time_grouping_freq
 
-    def match_reports(self, jmset, wmset, use_files=True):
+    def match_reports(self, jmset, wmset, use_files=True, previous_matches=None):
         """Match reports from jobmonitoring and WMArchive data.
 
         :param jmset: The JobMonitoring dataset.
@@ -28,6 +28,11 @@ class JobReportMatcher:
         """
         unmatched_jmdf = jmset.df.copy()
         unmatched_wmdf = wmset.df.copy()
+
+        # Todo Make match caching more robust!
+        if previous_matches is not None:
+            unmatched_jmdf = unmatched_jmdf.drop(previous_matches[unmatched_jmdf.index.name], errors='ignore')
+            unmatched_wmdf = unmatched_wmdf.drop(previous_matches[unmatched_wmdf.index.name], errors='ignore')
 
         # TODO Make this generic to exclude data from either data set
         # Exclude crab jobs as they are not present in the other data set
@@ -76,7 +81,12 @@ class JobReportMatcher:
                 "{:.4}% compared).".format(100 * total_compared / total)
             )
 
-        matches = pd.concat(match_list)
+        new_matches = pd.concat(match_list)
+
+        if previous_matches is not None:
+            matches = previous_matches.append(new_matches)
+        else:
+            matches = new_matches
 
         logging.debug(
             "{} duplicates in Jobmonitoring matches.".format(matches[unmatched_jmdf.index.name].duplicated().sum()))
@@ -84,8 +94,8 @@ class JobReportMatcher:
             "{} duplicates in WMArchive matches.".format(matches[unmatched_wmdf.index.name].duplicated().sum()))
 
         # Drop all matches from unmatched jobs
-        unmatched_jmdf = unmatched_jmdf.drop(matches[unmatched_jmdf.index.name])
-        unmatched_wmdf = unmatched_wmdf.drop(matches[unmatched_wmdf.index.name])
+        unmatched_jmdf = unmatched_jmdf.drop(matches[unmatched_jmdf.index.name], errors='ignore')
+        unmatched_wmdf = unmatched_wmdf.drop(matches[unmatched_wmdf.index.name], errors='ignore')
 
         logging.info(
             "Found {} matches, {} WMArchive jobs unmatched,".format(matches.shape[0], unmatched_wmdf.shape[0]) +
@@ -105,8 +115,17 @@ class JobReportMatcher:
                 "{} unmatched in WMArchive jobs.".format(unmatched_wmdf.shape[0]))
 
         # Directly match on workflow with remaining data
-        workflow_matches = self.match_on_workflow(unmatched_jmdf, unmatched_wmdf, jmset, wmset)
-        matches.append(workflow_matches)
+        # Todo Enable matching on workflows again!
+        # workflow_matches = self.match_on_workflow(unmatched_jmdf, unmatched_wmdf, jmset, wmset)
+        # matches = matches.append(workflow_matches)
+
+        # Drop all matches from unmatched jobs
+        unmatched_jmdf = unmatched_jmdf.drop(matches[unmatched_jmdf.index.name], errors='ignore')
+        unmatched_wmdf = unmatched_wmdf.drop(matches[unmatched_wmdf.index.name], errors='ignore')
+
+        logging.info(
+            "Found {} matches, {} WMArchive jobs unmatched,".format(matches.shape[0], unmatched_wmdf.shape[0]) +
+            "{} Jobmonitoring jobs unmatched.".format(unmatched_jmdf.shape[0]))
 
         return matches.reset_index(drop=True)
 
@@ -136,14 +155,27 @@ class JobReportMatcher:
         timestamp_metrics = [Metric.START_TIME, Metric.STOP_TIME]
 
         for metric in timestamp_metrics:
+
+            # Handle empty matches data frame
+            if matches.empty:
+                return matches
+
             left_timestamp = left[left_prefix + left_dataset.col(metric)]
             right_colname = right_prefix + right_dataset.col(metric)
 
-            if pd.isna(left_timestamp):
+            if pd.notna(left_timestamp):
                 # Filter timestamps on the right with specified tolerance, or keep entries if the left timestamp is null
-                matches = matches[matches.apply(
-                    lambda x: self._timestamp_diff(left_timestamp, x[right_colname]) < self.timestamp_tolerance,
-                    axis=1) | matches[right_colname].isnull()]
+
+                ts_mask = matches.apply(
+                    lambda x: self._timestamp_diff(left_timestamp, x[right_colname]) < self.timestamp_tolerance, axis=1)
+                # print(ts_mask.to_string())
+
+                null_mask = matches[right_colname].isnull()
+
+                mask = ts_mask | null_mask
+
+                # Filter matches via the masks
+                matches = matches[mask]
 
         return matches
 
@@ -169,7 +201,7 @@ class JobReportMatcher:
 
         return perfect_matches[[jmdf_index, wmdf_index]]
 
-    def match_on_workflow(self, jmdf, wmdf, jmset: Dataset, wmset: Dataset):
+    def match_on_workflow(self, jmdf, wmdf, jmset: Dataset, wmset: Dataset, exclusion_limit=200):
         jm_grouped = jmdf.groupby(jmset.col(Metric.WORKFLOW))
         wm_grouped = wmdf.groupby(wmset.col(Metric.WORKFLOW))
 
@@ -188,22 +220,39 @@ class JobReportMatcher:
             if jm_group.empty or wm_group.empty:
                 continue
 
+            # Todo Maybe also compare large groups?
+            if exclusion_limit > 0 and len(jm_group) > exclusion_limit:
+                continue
+
+            logging.debug(
+                "Checking for matches in {} WM, {} JM, ".format(len(wm_group), len(jm_group))
+            )
+
             self._prefix_columns(jm_group, 'jmdf_')
             self._prefix_columns(wm_group, 'wmdf_')
 
             group_match_count = 0
             for jm_index, jm_job in jm_group.iterrows():
+
                 matching_entries = self._filter_by_timestamp(jm_job, wm_group, jmset, wmset, left_prefix='jmdf_',
                                                              right_prefix='wmdf_')
 
                 if len(matching_entries) == 1:
                     # Perfect match found, insert into match list
-                    matches.get(jmdf.index.name).append(jm_job.index)
-                    matches.get(wmdf.index.name).append(matching_entries.iloc[0].index)
+
+                    # The index of the JM entry is already the label of the group
+                    matches.get(jmdf.index.name).append(jm_index)
+
+                    # Get the index of the only element in the data frame
+                    matches.get(wmdf.index.name).append(matching_entries.index.values[0])
 
                     group_match_count += 1
 
             total_compared += len(jm_group)
+            logging.debug(
+                "Found {} matches (of {} WM, {} JM, ".format(group_match_count, len(wm_group), len(jm_group)) +
+                "{:.4}% compared).".format(100 * total_compared / total)
+            )
 
         match_df = pd.DataFrame.from_dict(matches)
         return match_df
