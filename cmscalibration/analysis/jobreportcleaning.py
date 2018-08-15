@@ -1,9 +1,14 @@
+import logging
+
+import pandas as pd
+
 from data.dataset import Metric
 
 
 def clean_job_reports(df):
     df = _add_missing_core_counts(df)
     df = _add_missing_walltimes(df)
+    df = _add_missing_jobtypes(df)
     return df
 
 
@@ -17,16 +22,22 @@ def _add_missing_walltimes(df):
 def _add_missing_core_counts(df):
     df_filled = df.copy()
 
+    logging.debug("Filling in missing core count information, missing before {}".format(
+        df_filled[Metric.USED_CORES.value].isnull().sum()))
+
     # TODO Improve on this: This only fills values for workflows where the number of cores is unique across the data set
-    # def fill_unique(series):
-    #     if series[series > 0].nunique() == 1:
-    #         unique_value = series.loc[series.first_valid_index()]
-    #         return unique_value
-    #     else:
-    #         return series
-    #
-    # df_filled[Metric.USED_CORES.value] = df_filled.groupby(Metric.WORKFLOW.value)[Metric.USED_CORES.value].transform(
-    #     fill_unique)
+    def fill_unique(series):
+        if series[series > 0].nunique() == 1:
+            unique_value = series.loc[series.first_valid_index()]
+            return unique_value
+        else:
+            return series
+
+    # grouped_metrics = [Metric.WORKFLOW.value, Metric.JOB_CATEGORY.value]
+    grouped_metrics = [Metric.WORKFLOW.value]
+
+    df_filled[Metric.USED_CORES.value] = df_filled.groupby(grouped_metrics)[Metric.USED_CORES.value].transform(
+        fill_unique)
 
     # Todo Enable filling of used core counts
     # df_filled[Metric.USED_CORES.value] = df_filled.groupby(Metric.WORKFLOW.value)[Metric.USED_CORES.value].transform(
@@ -59,5 +70,29 @@ def _add_missing_core_counts(df):
 
     # Reset filled value again
     # df_filled.loc[df_filled[Metric.USED_CORES.value] < 0, Metric.USED_CORES.value] = np.NaN
+
+    logging.debug("Filling in missing core count information, missing after {}".format(
+        df_filled[Metric.USED_CORES.value].isnull().sum()))
+
+    return df_filled
+
+
+def _add_missing_jobtypes(df: pd.DataFrame):
+    logging.debug("Filling in missing job types, missing before {}".format(df[Metric.JOB_TYPE.value].isnull().sum()))
+
+    df_filled = df.copy()
+
+    def fill_unique(series):
+        if series.nunique() == 1:
+            unique_value = series.loc[series.first_valid_index()]
+            return unique_value
+        else:
+            return series
+
+    df_filled[Metric.JOB_TYPE.value] = df_filled.groupby(Metric.WORKFLOW.value)[Metric.JOB_TYPE.value].transform(
+        fill_unique)
+
+    logging.debug(
+        "Missing after filling in missing job types: {}".format(df_filled[Metric.JOB_TYPE.value].isnull().sum()))
 
     return df_filled
