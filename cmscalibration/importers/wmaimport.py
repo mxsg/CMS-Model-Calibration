@@ -17,20 +17,28 @@ class SummarizedWMAImporter(MultiFileDataImporter):
 
         'task': Metric.WORKFLOW,
         'jobtype': Metric.JOB_CATEGORY,
+        'task_name': Metric.TASK_NAME,
 
         'TotalJobCPU': Metric.CPU_TIME,
         'TotalJobTime': Metric.WALL_TIME,
         'NumberOfThreads': Metric.USED_CORES,
 
+        'NumberOfStreams': Metric.EVENT_STREAM_COUNT,
+
         # 'TotalEvents': Metric.EVENT_COUNT,
         'inputEvents': Metric.INPUT_EVENT_COUNT,
         'outputEvents': Metric.OUTPUT_EVENT_COUNT,
 
-        'readTotalSecs': Metric.READ_TIME,
+        # 'readTotalSecs': Metric.READ_TIME,
         'writeTotalSecs': Metric.WRITE_TIME,
-        'readAveragekB': Metric.AVERAGE_READ_SPEED,
-        'readTotalMB': Metric.TOTAL_READ_MB,
-        'writeTotalMB': Metric.TOTAL_WRITE_MB,
+        'readTotalSecs': Metric.READ_TIME,
+        'ioTotalSecs': Metric.IO_TIME,
+
+        'readTotalMB': Metric.TOTAL_READ_DATA,
+        'writeTotalMB': Metric.TOTAL_WRITTEN_DATA,
+
+        'readMBSec': Metric.AVERAGE_READ_SPEED,
+        'writeMBSec': Metric.AVERAGE_WRITE_SPEED,
 
         'exitCode': Metric.EXIT_CODE,
         'wn_name': Metric.HOST_NAME
@@ -68,11 +76,12 @@ class SummarizedWMAImporter(MultiFileDataImporter):
         df_raw = pd.concat(wmdf_list)
 
         # Check if all required columns exist
-        missing_columns = set(self.required_columns) - set(df_raw.columns)
-
-        if len(missing_columns) > 0:
-            logging.error("Jobmonitoring file has missing columns: {}!".format(missing_columns))
-            raise MissingColumnError(missing_columns)
+        # Todo Check again whether required columns exist, but allow additional columns not present in the original data set!
+        # missing_columns = set(self.required_columns) - set(df_raw.columns)
+        #
+        # if len(missing_columns) > 0:
+        #     logging.error("Jobmonitoring file has missing columns: {}!".format(missing_columns))
+        #     raise MissingColumnError(missing_columns)
 
         id_duplicates = df_raw[self.id_column].duplicated().sum()
         if id_duplicates > 0:
@@ -118,13 +127,19 @@ class SummarizedWMAImporter(MultiFileDataImporter):
         for timestamp_col in self.timestamp_columns:
             df[timestamp_col] = self._convert_timestamps(df[timestamp_col])
 
+        df['task_name'] = df['task'].str.split('/').apply(lambda x: x[-1] if len(x) >= 2 else None)
+
+        # Todo Do not overwrite previous values
         df['task'] = df['task'].str.split('/').apply(lambda x: x[1] if len(x) >= 2 else None)
 
         # Convert mixed case to lowercase
         df['jobtype'] = df['jobtype'].str.lower()
 
-        # Convert into MiB
-        df['readAveragekB'] = df['readAveragekB'] / 1024
+        # Handle storage
+        df['readTotalSecs'] = df['readTotalMB'] / df['readMBSec']
+        df['writeMBSec'] = df['writeTotalMB'] / df['writeTotalSecs']
+
+        df['ioTotalSecs'] = df['writeTotalSecs'] + df['readTotalSecs']
 
         # Fill null exit codes with 0
         # df['NumberOfThreads'] = df['NumberOfThreads'].fillna(0)
