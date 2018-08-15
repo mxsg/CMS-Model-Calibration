@@ -55,7 +55,21 @@ def add_performance_data(df):
     logging.debug("Min job CPU efficiency: {}, max: {}".format(job_data[job_cpu_efficiency].min(),
                                                                job_data[job_cpu_efficiency].max()))
 
+    job_data[Metric.IO_TIME.value] = job_data[Metric.WRITE_TIME.value] + job_data[Metric.READ_TIME.value]
+
     return job_data
+
+# Todo This may belong somewhere else!
+def add_missing_node_info(df, nodes):
+
+    average_computing_rate = nodes['HSScorePerCore'].mean()
+    average_computing_rate_per_jobslot = nodes['HSScorePerJobslot'].mean()
+
+    df_filled = df.copy()
+    df_filled['HSScorePerCore'] = df['HSScorePerCore'].fillna(average_computing_rate)
+    df_filled['HSScorePerJobslot'] = df['HSScorePerJobslot'].fillna(average_computing_rate_per_jobslot)
+
+    return df_filled
 
 
 def compute_average_cpu_efficiency(df, start=None, end=None):
