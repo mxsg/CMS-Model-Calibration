@@ -5,7 +5,7 @@ from utils import stoex
 from utils.histogram import bin_equal_width_overflow
 
 
-def extract_job_demands(df, type_split_col=Metric.JOB_TYPE.value):
+def extract_job_demands(df, type_split_col=Metric.JOB_TYPE.value, type_share_summary=None):
     """Extract resource demands from a data frame with job information.
 
     Returns a list of dictionaries containing a description of the statistical distribution of the
@@ -56,9 +56,20 @@ def extract_job_demands(df, type_split_col=Metric.JOB_TYPE.value):
         jobslots = extract_jobslot_distribution(jobs_of_type)
         demands_dict['requiredJobslotsStoEx'] = stoex.to_intpmf(jobslots.index, jobslots.values, simplify=True)
 
-        # Compute the relative frequency of the job type
-        relative_frequency = jobs_of_type.shape[0] / filtered_entries
-        demands_dict['relativeFrequency'] = relative_frequency
+        if type_share_summary is None:
+            # Compute the relative frequency of the job type
+            relative_frequency = jobs_of_type.shape[0] / filtered_entries
+            demands_dict['relativeFrequency'] = relative_frequency
+        else:
+            type_share_summary = type_share_summary.set_index('type')
+            type_shares = [type_share_summary.loc[key]['share'] for key in df_types.keys()]
+
+            # Normalize shares again in case it changed …
+            type_share_sum = sum(share for _, share in df_types.items())
+            for key, share in type_shares.items():
+                type_shares[key] = share / type_share_sum
+
+            relative_frequency = type_share_summary.loc
 
         demands_list = demands_list + [demands_dict]
 
