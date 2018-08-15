@@ -1,5 +1,6 @@
 import logging
 import os
+import pickle
 from datetime import datetime
 
 import pandas as pd
@@ -13,11 +14,13 @@ from exporters.datasetexport import CalibrationParameterExporter
 from importers.dataset_import import DatasetImporter
 from importers.gridkadata import GridKaNodeDataImporter, CoreUsageImporter, ColumnCoreUsageImporter
 from importers.jmimport import JMImporter
+from importers.jobcounts import JobCountImporter
 from importers.wmaimport import SummarizedWMAImporter
 from merge import job_node
 from merge.merge_datasets import UnionDatasetMerge
 from merge.reportmatching import JobReportMatcher
 from utils import config
+from utils import report as rp
 from utils.report import ReportBuilder
 
 
@@ -33,13 +36,44 @@ def run():
     report.append("")
     report.append("Start date: {}  \nEnd date: {}".format(start_date, end_date))
 
-    # Timezone correction correct for errors in timestamps of JobMonitoring data
-    dataset_importer = DatasetImporter(
-        JMImporter(timezone_correction='Europe/Berlin', hostname_suffix='.gridka.de', with_files=False))
-    jm_dataset = dataset_importer.import_dataset(config.jm_input_dataset, start_date, end_date)
+    # Todo Remove this optimization again!
+    # Todo Better error handling
 
-    wm_dataset = DatasetImporter(SummarizedWMAImporter(with_files=False)) \
-        .import_dataset(config.wm_input_dataset, start_date, end_date)
+    jm_cache = 'data/cache/jm_dataset.pkl'
+    jm_dataset = None
+
+    try:
+        with open(jm_cache, 'rb') as file:
+            jm_dataset = pickle.load(file)
+            logging.info("Loaded {} jobs from jm dataset at {}.".format(jm_dataset.df.shape[0], jm_cache))
+    except (IOError, pickle.UnpicklingError) as e:
+        logging.info("Could not load jobs from {}".format(jm_cache))
+        # Timezone correction correct for errors in timestamps of JobMonitoring data
+        dataset_importer = DatasetImporter(
+            JMImporter(timezone_correction='Europe/Berlin', hostname_suffix='.gridka.de', with_files=False))
+        jm_dataset = dataset_importer.import_dataset(config.jm_input_dataset, start_date, end_date)
+
+        with open(jm_cache, 'wb') as file:
+            pickle.dump(jm_dataset, file)
+            logging.info("Exported Jobmonitoring data to {}".format(jm_cache))
+
+    wm_cache = 'data/cache/wm_dataset.pkl'
+    wm_dataset = None
+
+    try:
+        with open(wm_cache, 'rb') as file:
+            wm_dataset = pickle.load(file)
+            logging.info("Loaded {} jobs from jm dataset at {}.".format(wm_dataset.df.shape[0], wm_cache))
+
+    except (IOError, pickle.UnpicklingError) as e:
+        logging.info("Could not load jobs from {}".format(wm_cache))
+        # Timezone correction correct for errors in timestamps of JobMonitoring data
+        wm_dataset = DatasetImporter(SummarizedWMAImporter(with_files=False)) \
+            .import_dataset(config.wm_input_dataset, start_date, end_date)
+
+        with open(wm_cache, 'wb') as file:
+            pickle.dump(wm_dataset, file)
+            logging.info("Exported WMArchive data to {}".format(wm_cache))
 
     # Todo Make this more generic!
     match_cache_file = 'data/jm-wmarchive-matches.csv'
@@ -48,7 +82,6 @@ def run():
     if os.path.isfile(match_cache_file):
         try:
             cached_matches = pd.read_csv(match_cache_file, usecols=[jm_dataset.df.index.name, wm_dataset.df.index.name])
-
             logging.info("Loaded {} matches from match cache {}!".format(cached_matches.shape[0], match_cache_file))
         except:
             logging.info("No match cache found at {}!".format(match_cache_file))
@@ -73,6 +106,9 @@ def run():
 
     # Match jobs to nodes
     matched_jobs = job_node.match_jobs_to_node(jobs_dataset.df, nodes)
+
+    logging.debug("Nodes with columns {}".format(nodes.columns))
+    matched_jobs = jobreportanalysis.add_missing_node_info(matched_jobs, nodes)
 
     jm_dataset.df = jobreportanalysis.add_performance_data(matched_jobs)
     job_data = jm_dataset.df
@@ -105,9 +141,28 @@ def run():
 
     report.add_figure(fig, axes, 'jobslot_usage_reference')
 
+    # ## Visualize number of jobs in calibration report
+
+    report.append("## Number of jobs completed over time")
+
+    job_counts = JobCountImporter().import_file('data/siteActivitycsv-may.csv', start_date, end_date)
+    fig, axes = calibrationreport.jobtypes_over_time_df(job_counts, 'date', 'count')
+    report.add_figure(fig, axes, 'job_counts_reference')
+
+    job_counts_reference_summary = job_counts.groupby('type')['count'].sum().reset_index()
+    job_counts_reference_summary.columns = ['type', 'count']
+
+    job_counts_reference_summary['share'] = job_counts_reference_summary['count'] / job_counts_reference_summary['count'].sum()
+    report.append_paragraph(rp.CodeBlock().append(job_counts_reference_summary.to_string()))
+
     # Compute calibration parameters
     node_types = nodeanalysis.extract_node_types(nodes)
-    scaled_nodes = nodeanalysis.scale_site_by_jobslots(node_types, cms_avg_cores)
+
+    # Todo Scaled share should be 1 for final tests!
+    # Todo This is for test with fewer threads!
+    share_scale_factor = 0.25
+
+    scaled_nodes = nodeanalysis.scale_site_by_jobslots(node_types, cms_avg_cores * share_scale_factor)
 
     demands = demandextraction.extract_job_demands(job_data)
 
