@@ -15,19 +15,21 @@ class Metric(Enum):
     WALL_TIME = 'WallTime'
     USED_CORES = 'UsedCores'
 
+    EVENT_STREAM_COUNT = 'UsedEventStreams'
+
     EVENT_COUNT = 'EventCount'
     INPUT_EVENT_COUNT = 'InputEventCount'
     OUTPUT_EVENT_COUNT = 'OutputEventCount'
 
-    IO_TIME = 'IOTime'
-    READ_TIME = 'IOReadTime'
-    WRITE_TIME = 'IOWriteTime'
+    TOTAL_READ_DATA = 'TotalReadDataMiB'
+    TOTAL_WRITTEN_DATA = 'TotalWriteDataMiB'
 
     AVERAGE_READ_SPEED = 'AvgReadSpeed'
     AVERAGE_WRITE_SPEED = 'AvgWriteSpeed'
 
-    TOTAL_READ_MB = 'TotalReadMB'
-    TOTAL_WRITE_MB = 'TotalWriteMB'
+    IO_TIME = 'IOTime'
+    READ_TIME = 'IOReadTime'
+    WRITE_TIME = 'IOWriteTime'
 
     CPU_EFFICIENCY = 'CPUEfficiency'
     OVERALL_CPU_EFFICIENCY = 'OverallJobCPUEfficiency'
@@ -48,6 +50,7 @@ class Metric(Enum):
     SUBMISSION_TOOL = 'SubmissionTool'
     JOB_TYPE = 'JobType'
     JOB_CATEGORY = 'JobCategory'
+    TASK_NAME = 'TaskName'
 
 
 class Dataset:
