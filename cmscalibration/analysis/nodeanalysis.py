@@ -39,8 +39,8 @@ def extract_node_types(df, grouped_cols=None):
     node_summary = node_types.count()
     node_summary.rename(columns={'hostname': 'nodeCount',
                                  'cpu model': 'name',
-                                 'HSScorePerCore': 'computingRatePerCore',
-                                 'HSScorePerJobslot': 'computingRate',
+                                 'HSScorePerCore': 'computingRate',
+                                 'HSScorePerJobslot': 'computingRatePerJobslot',
                                  'jobslots': 'jobslots',
                                  'cores': 'cores'},
                         inplace=True)
