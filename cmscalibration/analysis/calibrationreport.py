@@ -26,14 +26,14 @@ def jobtype_distribution(dataset: Dataset):
     # fig.savefig(path)
 
 
-def jobtypes_over_time(dataset: Dataset):
+def jobtypes_over_time(dataset: Dataset, date_col=Metric.STOP_TIME.value, type_col=Metric.JOB_TYPE.value):
     df = dataset.df
 
     # df = df.set_index(Metric.STOP_TIME.value)
     # df = df.resample('1H', how='count')
 
     # Use crosstab to get pivot table with Job types in the columns
-    df = pd.crosstab(index=[df[Metric.STOP_TIME.value]], columns=[df[Metric.JOB_TYPE.value]])
+    df = pd.crosstab(index=[df[date_col]], columns=[df[type_col]])
     df = df.resample('1D').sum()
 
     # df2 = df.groupby(df[Metric.STOP_TIME.value].dt.hour).count()[Metric.JOB_TYPE.value]
@@ -42,6 +42,26 @@ def jobtypes_over_time(dataset: Dataset):
     # stacked =True
     plt.figure()
     axes = df.plot.bar(stacked=True)
+    fig = axes.get_figure()
+
+    return fig, axes
+    # fig.savefig(path)
+
+
+def jobtypes_over_time_df(df, date_col=Metric.STOP_TIME.value, type_col=Metric.JOB_TYPE.value):
+    # df = df.set_index(Metric.STOP_TIME.value)
+    # df = df.resample('1H', how='count')
+
+    # Use crosstab to get pivot table with Job types in the columns
+    # df = pd.crosstab(index=[df[date_col]], columns=[df[type_col]])
+    jobs_counts = df.pivot(index=date_col, columns=type_col, values='count').fillna(0)
+
+    # df2 = df.groupby(df[Metric.STOP_TIME.value].dt.hour).count()[Metric.JOB_TYPE.value]
+    # pivot_df = df2.pivot(index=Metric.STOP_TIME.value, columns=Metric)
+
+    # stacked =True
+    plt.figure()
+    axes = jobs_counts.plot.bar(stacked=True)
     fig = axes.get_figure()
 
     return fig, axes
@@ -108,7 +128,7 @@ def add_jobs_report_section(dataset: Dataset, report: rp.ReportBuilder):
                                                                         day_count))
     report.append()
 
-    df = dataset.df
+    df = dataset.df.copy()
 
     # TODO This should be removed again later!
     report.append("Total job number: {}  ".format(df.shape[0]))
@@ -140,6 +160,8 @@ def add_jobs_report_section(dataset: Dataset, report: rp.ReportBuilder):
     #     multiple_core_counts.groupby([Metric.WORKFLOW.value, Metric.USED_CORES.value]).size().unstack(fill_value=0),
     #     report)
 
+    report.append("### Job Category/Job Type Information")
+
     category_summary = df.groupby(Metric.JOB_CATEGORY.value).size().reset_index()
 
     code = rp.CodeBlock().append(category_summary.to_string())
@@ -147,6 +169,7 @@ def add_jobs_report_section(dataset: Dataset, report: rp.ReportBuilder):
 
     # Fill job types by adding an unknown value
     df[Metric.JOB_TYPE.value] = df[Metric.JOB_TYPE.value].fillna('++unknown++')
+    df[Metric.JOB_CATEGORY.value] = df[Metric.JOB_CATEGORY.value].fillna('++unknown++')
 
     category_summary = df.groupby([Metric.JOB_CATEGORY.value, Metric.JOB_TYPE.value]).size().reset_index()
 
@@ -163,6 +186,18 @@ def add_jobs_report_section(dataset: Dataset, report: rp.ReportBuilder):
     summary_code = rp.CodeBlock().append(summary.to_string())
     report.append_paragraph(summary_code)
     report.append()
+
+    # Add information about job types per workflow
+    # Todo Add this!
+    # task_name_summary = df[Metric.TASK_NAME.value].fillna('++unknown++').value_counts()
+    #
+    # report.append("Different task names:  ")
+    # report.append_paragraph(rp.CodeBlock().append(task_name_summary.to_string()))
+
+    workflow_summary = df.groupby([Metric.WORKFLOW.value, Metric.JOB_CATEGORY.value])[Metric.JOB_TYPE.value].nunique()
+
+    report.append("Different job types per category:  ")
+    report.append_paragraph(rp.CodeBlock().append(workflow_summary.to_string()))
 
     # Add figures of distribution
     fig, axes = jobtype_distribution(dataset)
