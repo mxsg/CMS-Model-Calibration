@@ -73,6 +73,9 @@ def scale_site_by_jobslots(df, count):
     count_col = 'nodeCount'
 
     # Compute the total number of slots in the dataframe and the
+    if df['jobslots'].isnull().sum() > 0 or df['nodeCount'].isnull().sum() > 0:
+        logging.warning("Node description has null values for jobslots or node count!")
+
     total_slots = df['jobslots'].dot(df['nodeCount'])
     share = count / total_slots
 
