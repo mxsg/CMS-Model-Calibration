@@ -197,11 +197,6 @@ def add_jobs_report_section(dataset: Dataset, report: rp.ReportBuilder):
     # report.append("Different task names:  ")
     # report.append_paragraph(rp.CodeBlock().append(task_name_summary.to_string()))
 
-    workflow_summary = df.groupby([Metric.WORKFLOW.value, Metric.JOB_CATEGORY.value])[Metric.JOB_TYPE.value].nunique()
-
-    report.append("Different job types per category:  ")
-    report.append_paragraph(rp.CodeBlock().append(workflow_summary.to_string()))
-
     # Add figures of distribution
     fig, axes = jobtype_distribution(dataset)
     report.add_figure(fig, axes, 'jobtypes_pie')
