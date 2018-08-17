@@ -61,8 +61,12 @@ class ReportBuilder:
             for image_format in self.image_formats:
                 fig.savefig(os.path.join(self.resource_path, figure_id + '.' + image_format))
 
-    def add_figure(self, fig, axes, identifier):
-        # Maybe refactor into its own class?
+    def add_figure(self, fig, axes, identifier, tight_layout=True):
+
+        if tight_layout:
+            fig.tight_layout()
+
+        # Todo Maybe refactor into its own class?
         if identifier in self.figures:
             raise ValueError("Figure with identical identifier '{}' already included in report!".format(identifier))
 
