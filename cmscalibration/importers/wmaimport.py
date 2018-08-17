@@ -21,7 +21,7 @@ class SummarizedWMAImporter(MultiFileDataImporter):
 
         'TotalJobCPU': Metric.CPU_TIME,
         'TotalJobTime': Metric.WALL_TIME,
-        'NumberOfThreads': Metric.USED_CORES,
+        'NumberOfThreads': Metric.USED_THREADS,
 
         'NumberOfStreams': Metric.EVENT_STREAM_COUNT,
 
