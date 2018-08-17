@@ -69,6 +69,9 @@ def jobtypes_over_time_df(df, date_col=Metric.STOP_TIME.value, type_col=Metric.J
 
 
 def demand_histogram(df, cutoff_quantile=0.98):
+    if df.empty:
+        return None, None
+
     x = df['CPUDemand']
     y = df['CPUIdleTime']
 
@@ -238,7 +241,8 @@ def add_jobs_report_section(dataset: Dataset, report: rp.ReportBuilder):
         report.append("CPU Demand and Idle Time for jobs of type {}".format(job_type))
         jobtype_df = jobs[(jobs['CPUDemand'].notnull()) & (jobs['CPUIdleTime'].notnull())]
         fig, axes = demand_histogram(jobtype_df)
-        report.add_figure(fig, axes, 'job_demands_{}'.format(job_type))
+        if fig is not None:
+            report.add_figure(fig, axes, 'job_demands_{}'.format(job_type))
 
     report.append("#### Jobslot usage overview")
     report.append()
