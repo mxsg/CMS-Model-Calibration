@@ -13,8 +13,9 @@ class Metric(Enum):
     CPU_TIME = 'CPUTime'
     CPU_TIME_PER_CORE = 'CPUTimePerCore'
     WALL_TIME = 'WallTime'
-    USED_CORES = 'UsedCores'
 
+    USED_CORES = 'UsedCores'  # Number of jobslots a job needs
+    USED_THREADS = 'UsedThreads'  # Number of Threads may also be lower
     EVENT_STREAM_COUNT = 'UsedEventStreams'
 
     EVENT_COUNT = 'EventCount'
