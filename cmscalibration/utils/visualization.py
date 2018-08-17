@@ -14,8 +14,6 @@ def draw_binned_data(counts, bins):
     axes.set_xlim(left=0)
     axes.set_ylim(bottom=0)
 
-    fig.tight_layout()
-
     return fig, axes
 
 
@@ -32,7 +30,5 @@ def draw_integer_distribution(values, counts):
         vals[k - min_value] = v
 
     axes.bar(bins, vals)
-
-    fig.tight_layout()
 
     return fig, axes
