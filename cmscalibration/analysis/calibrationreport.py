@@ -49,23 +49,19 @@ def jobtypes_over_time(dataset: Dataset, date_col=Metric.STOP_TIME.value, type_c
 
 
 def jobtypes_over_time_df(df, date_col=Metric.STOP_TIME.value, type_col=Metric.JOB_TYPE.value):
-    # df = df.set_index(Metric.STOP_TIME.value)
-    # df = df.resample('1H', how='count')
+    # Pivot table to get types as columns
 
-    # Use crosstab to get pivot table with Job types in the columns
-    # df = pd.crosstab(index=[df[date_col]], columns=[df[type_col]])
+    # date | type | count        date | a  | b
+    # 1    | a    | 10      -->  1    | 10 | 20
+    # 1    | b    | 20
+
     jobs_counts = df.pivot(index=date_col, columns=type_col, values='count').fillna(0)
 
-    # df2 = df.groupby(df[Metric.STOP_TIME.value].dt.hour).count()[Metric.JOB_TYPE.value]
-    # pivot_df = df2.pivot(index=Metric.STOP_TIME.value, columns=Metric)
-
-    # stacked =True
     plt.figure()
     axes = jobs_counts.plot.bar(stacked=True)
     fig = axes.get_figure()
 
     return fig, axes
-    # fig.savefig(path)
 
 
 def demand_histogram(df, cutoff_quantile=0.98):
