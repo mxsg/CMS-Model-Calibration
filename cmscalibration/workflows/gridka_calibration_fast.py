@@ -146,7 +146,7 @@ def run():
     report.append("## Number of jobs completed over time")
 
     job_counts = JobCountImporter().import_file('data/siteActivitycsv-may.csv', start_date, end_date)
-    fig, axes = calibrationreport.jobtypes_over_time_df(job_counts, 'date', 'count')
+    fig, axes = calibrationreport.jobtypes_over_time_df(job_counts, 'date', 'type')
     report.add_figure(fig, axes, 'job_counts_reference', tight_layout=False)
 
     job_counts_reference_summary = job_counts.groupby('type')['count'].sum().reset_index()
