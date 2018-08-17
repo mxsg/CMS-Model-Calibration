@@ -1,11 +1,16 @@
 import logging
+from abc import abstractmethod, ABCMeta
+from typing import Dict
 
+import pandas as pd
+
+import utils.report as rp
 from data.dataset import Metric
-from utils import stoex
+from utils import stoex, visualization
 from utils.histogram import bin_equal_width_overflow
 
 
-def extract_job_demands(df, type_split_col=Metric.JOB_TYPE.value, type_share_summary=None):
+def extract_job_demands(df, report: rp.ReportBuilder, type_split_col=Metric.JOB_TYPE.value, type_share_summary=None):
     """Extract resource demands from a data frame with job information.
 
     Returns a list of dictionaries containing a description of the statistical distribution of the
@@ -28,13 +33,17 @@ def extract_job_demands(df, type_split_col=Metric.JOB_TYPE.value, type_share_sum
 
     df_filtered = _filter_invalid_data(df)
 
+    # Todo Move splitting of the jobs
     df_dict_by_type = split_by_column_value(df_filtered, type_split_col, copy=True)
+    # df_dict_by_type = split_by_column_combination(df_filtered, type_split_col, Metric.USED_CORES.value)
 
     total_entries = df_filtered.shape[0]
 
     # Filter dictionary for rare job types
-    df_types = {k: v for k, v in df_dict_by_type.items() if v.shape[0] / total_entries >= 0.001}
+    df_types = {k: v for k, v in df_dict_by_type.items() if v.shape[0] / total_entries >= 0.0005}
     logging.debug("Filtered data frames, dropped {} job types.".format(len(df_dict_by_type) - len(df_types)))
+
+    report.append("## Resource Demand Extraction")
 
     filtered_entries = sum([df_type.shape[0] for key, df_type in df_types.items()])
 
@@ -43,6 +52,14 @@ def extract_job_demands(df, type_split_col=Metric.JOB_TYPE.value, type_share_sum
 
         logging.debug("Extracting CPU demand distribution for job type {}.".format(name))
         counts, bins = extract_demand_distribution(jobs_of_type, 'CPUDemand')
+
+        fig, axes = visualization.draw_binned_data(counts, bins)
+        axes.set_xlabel(r"CPU Demand / (s $\cdot$ (HepSpec Score per Core)")
+        axes.set_ylabel("Probability Density")
+        axes.set_title("CPU Demand Distribution for jobs of type: {}".format(name))
+
+        report.add_figure(fig, axes, 'cpu_demands_type_{}'.format(name))
+
         demands_dict['cpuDemandStoEx'] = stoex.hist_to_doublepdf(counts, bins)
 
         logging.debug("Extracting I/O time distribution for job type {}.".format(name))
@@ -53,8 +70,22 @@ def extract_job_demands(df, type_split_col=Metric.JOB_TYPE.value, type_share_sum
         counts, bins = extract_demand_distribution(jobs_of_type, 'CPUIdleTimeRatio')
         demands_dict['ioTimeRatioStoEx'] = stoex.hist_to_doublepdf(counts, bins)
 
+        fig, axes = visualization.draw_binned_data(counts, bins)
+        axes.set_xlabel(r"I/O Ratio of CPU Demand")
+        axes.set_ylabel("Probability Density")
+        axes.set_title("I/O Ratio Distribution for jobs of type: {}".format(name))
+
+        report.add_figure(fig, axes, 'io_ratio_type_{}'.format(name))
+
         jobslots = extract_jobslot_distribution(jobs_of_type)
         demands_dict['requiredJobslotsStoEx'] = stoex.to_intpmf(jobslots.index, jobslots.values, simplify=True)
+
+        fig, axes = visualization.draw_integer_distribution(jobslots.index.tolist(), jobslots.values)
+        axes.set_xlabel(r"Number of required Job slots")
+        axes.set_ylabel("Number of Jobs")
+        axes.set_title("Job Slot Distribution for jobs of type: {}".format(name))
+
+        report.add_figure(fig, axes, 'jobslots_type_{}'.format(name))
 
         if type_share_summary is None:
             # Compute the relative frequency of the job type
@@ -69,7 +100,8 @@ def extract_job_demands(df, type_split_col=Metric.JOB_TYPE.value, type_share_sum
             for key, share in type_shares.items():
                 type_shares[key] = share / type_share_sum
 
-            relative_frequency = type_share_summary.loc
+            # Todo Fix this!
+            # relative_frequency = type_share_summary.loc
 
         demands_list = demands_list + [demands_dict]
 
@@ -85,8 +117,7 @@ def extract_demand_distribution(df, demand_col, bin_count=100):
 
 def extract_jobslot_distribution(df):
     """Extract the distribution of needed jobslots from a data frame."""
-
-    return df[Metric.USED_CORES.value].value_counts().sort_index()
+    return df[Metric.USED_CORES.value].astype(int).value_counts().sort_index()
 
 
 def _filter_invalid_data(df):
@@ -139,3 +170,51 @@ def split_by_column_value(df, colname, copy=False):
         partitions = {value: df[df[colname] == value] for value in values}
 
     return partitions
+
+
+# Todo Make this more general
+# Todo Make groups with null values? (rather not, as they would not contain useful data)
+def split_by_column_combination(df, primary_col, secondary_col):
+    logging.debug("Splitting data frame by columns: primary {}, secondary {}.".format(primary_col, secondary_col))
+
+    primary_values = df[primary_col].unique()
+
+    def make_group_key(col1, val1, col2, val2):
+        return "{}{}_{}{}".format(col1, val1, col2, val2)
+
+    partitions = {}
+    for primary_value in primary_values:
+        primary_group = df[df[primary_col] == primary_value]
+        secondary_values = primary_group[secondary_col].unique()
+
+        new_groups = {make_group_key(primary_col, primary_value, secondary_col, secondary_value): primary_group[
+            primary_group[secondary_col] == secondary_value].copy()
+                      for secondary_value in secondary_values}
+        partitions.update(new_groups)
+
+    return partitions
+
+
+class AbstractJobClassifier(metaclass=ABCMeta):
+
+    @abstractmethod
+    def split(self, df: pd.DataFrame) -> Dict[str, pd.DataFrame]:
+        return NotImplemented
+
+
+class ColumnJobClassifier(AbstractJobClassifier):
+
+    def __init__(self, colname: str, copy=False):
+        self.colname = colname
+        self.copy = copy
+
+    def split(self, df: pd.DataFrame) -> Dict[str, pd.DataFrame]:
+        logging.debug("Splitting data frame by column.")
+        values = df[self.colname].unique()
+
+        if self.copy:
+            partitions = {value: df[df[self.colname] == value].copy() for value in values}
+        else:
+            partitions = {value: df[df[self.colname] == value] for value in values}
+
+        return partitions
