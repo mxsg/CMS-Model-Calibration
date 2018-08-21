@@ -1,7 +1,9 @@
 import logging
+import math
 from abc import abstractmethod, ABCMeta
 from typing import Dict
 
+import matplotlib.pyplot as plt
 import pandas as pd
 
 import utils.report as rp
@@ -47,18 +49,39 @@ def extract_job_demands(df, report: rp.ReportBuilder, type_split_col=Metric.JOB_
 
     filtered_entries = sum([df_type.shape[0] for key, df_type in df_types.items()])
 
-    for name, jobs_of_type in df_types.items():
+    # Todo Refactor this!
+    # Setup subplots
+    nplots = len(df_types)
+    ncols = 2
+    nrows = math.ceil(nplots / ncols)
+
+    jobslot_fig, jobslot_axes = plt.subplots(ncols=ncols, nrows=nrows)
+    cpu_fig, cpu_axes = plt.subplots(ncols=ncols, nrows=nrows)
+    io_fig, io_axes = plt.subplots(ncols=ncols, nrows=nrows)
+
+    i_subplot = 0
+
+    job_types = [tuple(x) for x in df_types.items()]
+    job_types.sort(key=lambda x: x[1].shape[0], reverse=True)
+
+    for name, jobs_of_type in job_types:
         demands_dict = {'typeName': name}
 
         logging.debug("Extracting CPU demand distribution for job type {}.".format(name))
         counts, bins = extract_demand_distribution(jobs_of_type, 'CPUDemand')
 
         fig, axes = visualization.draw_binned_data(counts, bins)
-        axes.set_xlabel(r"CPU Demand / (s $\cdot$ (HepSpec Score per Core)")
+        axes.set_xlabel(r"CPU Demand / (s $\cdot$ (HS06 Score per Core))")
         axes.set_ylabel("Probability Density")
-        axes.set_title("CPU Demand Distribution for jobs of type: {}".format(name))
+        axes.set_title("CPU Demand Distribution for Jobs of Type: {}".format(name))
 
         report.add_figure(fig, axes, 'cpu_demands_type_{}'.format(name))
+
+        cpu_axis = cpu_axes[i_subplot // ncols, i_subplot % ncols]
+        visualization.draw_binned_data_subplot(counts, bins, cpu_axis, name=name)
+
+        cpu_axis.set_xlabel(r"CPU Demand / (s $\cdot$ (HS06 Score per Core))")
+        cpu_axis.set_ylabel("Probability Density")
 
         demands_dict['cpuDemandStoEx'] = stoex.hist_to_doublepdf(counts, bins)
 
@@ -70,20 +93,34 @@ def extract_job_demands(df, report: rp.ReportBuilder, type_split_col=Metric.JOB_
         counts, bins = extract_demand_distribution(jobs_of_type, 'CPUIdleTimeRatio')
         demands_dict['ioTimeRatioStoEx'] = stoex.hist_to_doublepdf(counts, bins)
 
-        fig, axes = visualization.draw_binned_data(counts, bins)
+        fix, axes = visualization.draw_binned_data(counts, bins)
         axes.set_xlabel(r"I/O Ratio of CPU Demand")
         axes.set_ylabel("Probability Density")
-        axes.set_title("I/O Ratio Distribution for jobs of type: {}".format(name))
+        axes.set_title("I/O Ratio Distribution for Jobs of Type: {}".format(name))
 
         report.add_figure(fig, axes, 'io_ratio_type_{}'.format(name))
+
+        io_axis = io_axes[i_subplot // ncols, i_subplot % ncols]
+        visualization.draw_binned_data_subplot(counts, bins, io_axis, name=name)
+
+        io_axis.set_xlabel(r"I/O Ratio of CPU Demand")
+        io_axis.set_ylabel("Probability Density")
 
         jobslots = extract_jobslot_distribution(jobs_of_type)
         demands_dict['requiredJobslotsStoEx'] = stoex.to_intpmf(jobslots.index, jobslots.values, simplify=True)
 
-        fig, axes = visualization.draw_integer_distribution(jobslots.index.tolist(), jobslots.values)
-        axes.set_xlabel(r"Number of required Job slots")
-        axes.set_ylabel("Number of Jobs")
-        axes.set_title("Job Slot Distribution for jobs of type: {}".format(name))
+        jobslot_bins = range(1, 9)
+        jobslot_counts = [0] * len(jobslot_bins)
+
+        for i, slots in enumerate(jobslot_bins):
+            if slots in jobslots.index:
+                jobslot_counts[i] = jobslots.loc[slots]
+
+        fig, axes = visualization.draw_integer_distribution(jobslot_bins, jobslot_counts, name=name)
+        visualization.draw_integer_distribution_subplot(jobslot_bins, jobslot_counts,
+                                                        jobslot_axes[i_subplot // ncols, i_subplot % ncols], name=name)
+
+        # axes.set_title("Job Slot Distribution for jobs of type: {}".format(name))
 
         report.add_figure(fig, axes, 'jobslots_type_{}'.format(name))
 
@@ -104,6 +141,23 @@ def extract_job_demands(df, report: rp.ReportBuilder, type_split_col=Metric.JOB_
             # relative_frequency = type_share_summary.loc
 
         demands_list = demands_list + [demands_dict]
+
+        i_subplot += 1
+
+    def configure_overview_plot(fig, axes, identifier):
+        fig.set_size_inches(14, 12)
+
+        # Remove last plot if odd number of plots is encountered
+        if nplots % ncols != 0:
+            fig.delaxes(axes[nplots // ncols, nplots % 2])
+
+        # Add overview figure to the report
+        report.add_figure(fig, axes, identifier)
+
+    # Add overview figures to the report
+    configure_overview_plot(jobslot_fig, jobslot_axes, 'jobslots_overview')
+    configure_overview_plot(cpu_fig, cpu_axes, 'cpu_demand_overview')
+    configure_overview_plot(io_fig, io_axes, 'io_demand_overview')
 
     return demands_list
 
