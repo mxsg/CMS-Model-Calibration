@@ -137,7 +137,9 @@ def run():
     joblslots_from_reports = jobslot_timeseries['totalSlots'].resample('s').pad().resample('H').mean()
 
     fig, axes = calibrationreport.multiple_jobslot_usage(
-        {'from job reports': joblslots_from_reports, 'from GridKa usage data': core_df['cms']})
+        {'Extracted from job reports': joblslots_from_reports, 'Allocated to GridKa CMS Pilots': core_df['cms']})
+    # Todo Make this generic for the time period
+    # axes.set_title('Allocated job slots ({})'.format("May 2018, 31 days"))
 
     report.add_figure(fig, axes, 'jobslot_usage_reference')
 
