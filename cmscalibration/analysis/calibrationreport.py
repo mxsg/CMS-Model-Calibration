@@ -254,11 +254,11 @@ def add_jobs_report_section(dataset: Dataset, report: rp.ReportBuilder):
     fig, axes = jobslot_usage(jobslot_timeseries)
     report.add_figure(fig, axes, 'jobslot_usage')
 
-    # Todo Implement this!
-    report.append("## Job Event Counts")
-    df = dataset.df.copy()
-
-    # job_event_counts
+    # # Todo Implement this!
+    # report.append("## Job Event Counts")
+    # df = dataset.df.copy()
+    #
+    # # job_event_counts
 
 
 def add_frame_to_report(df, report: rp.ReportBuilder):
