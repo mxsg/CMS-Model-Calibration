@@ -105,7 +105,7 @@ def multiple_jobslot_usage(series_dict, resample_freq='1H'):
         usage_ts.plot.line(ax=axes, label=name)
 
     axes.set_xlabel('Time')
-    axes.set_ylabel('Allocated jobslots')
+    axes.set_ylabel('Allocated job slots')
     axes.legend()
 
     fig.tight_layout()
