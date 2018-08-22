@@ -63,7 +63,7 @@ def setup_logging():
 
     # Log into file with current date and time
     now = datetime.now()
-    log_name = "logfile_{}".format(now.strftime('%Y-%m-%d_%H-%M-%S'))
+    log_name = "logfile_{}.txt".format(now.strftime('%Y-%m-%d_%H-%M-%S'))
 
     logging.basicConfig(
         format='%(asctime)s [%(levelname)-5.5s]  %(message)s',
