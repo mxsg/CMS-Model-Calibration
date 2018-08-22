@@ -27,11 +27,28 @@ from utils.report import ReportBuilder
 def run():
     report = ReportBuilder(base_path=config.output_directory, filename='calibration-report.md')
 
+    # Todo Move this somewhere else?
+    # Log into file with current date and time
+
+    log_path = os.path.join(config.output_directory, 'log')
+    os.makedirs(log_path, exist_ok=True)
+
+    now = datetime.now()
+    log_name = "logfile_{}.txt".format(now.strftime('%Y-%m-%d_%H-%M-%S'))
+
+    logging.getLogger().addHandler(
+        logging.FileHandler(os.path.join(log_path, log_name)))
+
     report.append('# GridKa Calibration Run')
-    report.append('at {}'.format(datetime.now().strftime('%Y-%m-%d, %H:%M:%S')))
+
+    time_now = datetime.now().strftime('%Y-%m-%d, %H:%M:%S')
+    report.append('at {}'.format(time_now))
+    logging.info("Model Calibration run at {}".format(time_now))
 
     start_date = pd.to_datetime(config.start_date)
     end_date = pd.to_datetime(config.end_date)
+
+    day_count = (end_date - start_date).days
 
     report.append("")
     report.append("Start date: {}  \nEnd date: {}".format(start_date, end_date))
@@ -154,27 +171,51 @@ def run():
     job_counts_reference_summary = job_counts.groupby('type')['count'].sum().reset_index()
     job_counts_reference_summary.columns = ['type', 'count']
 
-    job_counts_reference_summary['share'] = job_counts_reference_summary['count'] / job_counts_reference_summary['count'].sum()
+    job_counts_reference_summary['share'] = job_counts_reference_summary['count'] / job_counts_reference_summary[
+        'count'].sum()
     report.append_paragraph(rp.CodeBlock().append(job_counts_reference_summary.to_string()))
 
     # Compute calibration parameters
     node_types = nodeanalysis.extract_node_types(nodes)
 
-    # Todo Scaled share should be 1 for final tests!
-    # Todo This is for test with fewer threads!
-    share_scale_factor = 0.25
-
-    scaled_nodes = nodeanalysis.scale_site_by_jobslots(node_types, cms_avg_cores * share_scale_factor)
-
+    scaled_nodes_pilots = nodeanalysis.scale_site_by_jobslots(node_types, cms_avg_cores)
     demands = demandextraction.extract_job_demands(job_data, report)
 
-    parameter_path = os.path.join(config.output_directory, 'parameters')
+    job_counts_reference_summary['throughput_day'] = job_counts_reference_summary['count'].divide(day_count)
+    export_job_counts(job_counts_reference_summary, 'parameters_slots_from_pilots', 'job_counts_reference_jm.csv')
+    export_parameters('parameters_slots_from_pilots', scaled_nodes_pilots, demands, report)
 
-    exporter = CalibrationParameterExporter(parameter_path)
-    exporter.export(scaled_nodes, 'nodes.json', demands, 'jobs.json')
+    # Todo Refactor this into its own method
+    # Export with the actual used cores for this parameter set
+    scaled_nodes_jobs = None  # Todo Replace this!
 
     # Write jobs to report
     calibrationreport.add_jobs_report_section(jm_dataset, report)
 
     # Write report out to disk
     report.write()
+
+
+def export_job_counts(job_counts, subdir, name):
+    path = os.path.join(config.output_directory, subdir, name)
+
+    job_counts = job_counts[job_counts['count'] > 0]
+
+    job_counts.to_csv(path)
+
+
+def export_parameters(subdir, node_params, demand_params, report: rp.ReportBuilder = None):
+    parameter_path = os.path.join(config.output_directory, subdir)
+
+    exporter = CalibrationParameterExporter(parameter_path)
+    exporter.export(node_params, 'nodes.json', demand_params, 'jobs.json')
+
+    # Todo Use another solution for writing out reports to different locations?
+    if report is not None:
+        base_path = report.get_base_path()
+        report.set_base_path(parameter_path)
+
+        report.write()
+
+        # Reset base path
+        report.set_base_path(base_path)
