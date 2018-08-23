@@ -159,7 +159,7 @@ def extract_job_demands(df, report: rp.ReportBuilder, type_split_col=Metric.JOB_
     configure_overview_plot(cpu_fig, cpu_axes, 'cpu_demand_overview')
     configure_overview_plot(io_fig, io_axes, 'io_demand_overview')
 
-    return demands_list
+    return demands_list, df_types
 
 
 def extract_demand_distribution(df, demand_col, bin_count=100):
