@@ -73,7 +73,7 @@ def run():
     node_types = nodeanalysis.extract_node_types(nodes)
     scaled_nodes = nodeanalysis.scale_site_by_jobslots(node_types, cms_avg_cores)
 
-    demands = demandextraction.extract_job_demands(job_data)
+    demands, _ = demandextraction.extract_job_demands(job_data)
 
     parameter_path = os.path.join(config.output_directory, 'parameters')
 

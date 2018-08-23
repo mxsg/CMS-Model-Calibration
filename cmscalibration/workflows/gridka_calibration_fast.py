@@ -10,6 +10,7 @@ from analysis import jobreportanalysis
 from analysis import jobreportcleaning
 from analysis import nodeanalysis
 from data.dataset import Metric
+from exporters import references
 from exporters.datasetexport import CalibrationParameterExporter
 from importers.dataset_import import DatasetImporter
 from importers.gridkadata import GridKaNodeDataImporter, CoreUsageImporter, ColumnCoreUsageImporter
@@ -173,17 +174,36 @@ def run():
 
     job_counts_reference_summary['share'] = job_counts_reference_summary['count'] / job_counts_reference_summary[
         'count'].sum()
+
+    report.append("Job throughput from CMS Dashboard:")
+    report.append()
     report.append_paragraph(rp.CodeBlock().append(job_counts_reference_summary.to_string()))
 
     # Compute calibration parameters
     node_types = nodeanalysis.extract_node_types(nodes)
 
     scaled_nodes_pilots = nodeanalysis.scale_site_by_jobslots(node_types, cms_avg_cores)
-    demands = demandextraction.extract_job_demands(job_data, report)
+    demands, partitions = demandextraction.extract_job_demands(job_data, report)
 
     job_counts_reference_summary['throughput_day'] = job_counts_reference_summary['count'].divide(day_count)
     export_job_counts(job_counts_reference_summary, 'parameters_slots_from_pilots', 'job_counts_reference_jm.csv')
     export_parameters('parameters_slots_from_pilots', scaled_nodes_pilots, demands, report)
+
+    # Export job throughputs from analyzed jobs
+
+    # Todo Refactor this!
+    jobs_from_reports = job_data.copy()
+    jobs_from_reports[Metric.JOB_TYPE.value] = jobs_from_reports[Metric.JOB_TYPE.value].fillna('unknown')
+    job_counts_reports = jobs_from_reports.groupby(Metric.JOB_TYPE.value).size().reset_index()
+    job_counts_reports.columns = ['type', 'count']
+    job_counts_reports['throughput_day'] = job_counts_reports['count'].divide(day_count)
+
+    export_job_counts(job_counts_reports, 'parameters_slots_from_pilots',
+                      'job_counts_reference_extracted_reports.csv')
+
+    # Export walltimes
+    references.export_walltimes(partitions, os.path.join(config.output_directory, 'parameters_slots_from_pilots',
+                                                         'job_walltimes_references.csv'))
 
     # Todo Refactor this into its own method
     # Export with the actual used cores for this parameter set
