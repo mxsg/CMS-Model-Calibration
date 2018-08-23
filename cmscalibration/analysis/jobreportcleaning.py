@@ -10,6 +10,7 @@ def clean_job_reports(df):
     df = _add_missing_jobtypes(df)
     df = _core_thread_count_heuristic(df)
     # df = _add_missing_core_counts(df)
+    df = _add_missing_walltimes(df)
     return df
 
 
@@ -163,5 +164,29 @@ def _add_missing_jobtypes(df: pd.DataFrame):
 
     logging.debug(
         "Missing after filling in missing job types: {}".format(df_filled[Metric.JOB_TYPE.value].isnull().sum()))
+
+    return df_filled
+
+def _add_missing_walltimes(df: pd.DataFrame):
+    logging.debug("Filling in missing walltimes, missing before {}".format(df[Metric.WALL_TIME.value].isnull().sum()))
+
+    df_filled = df.copy()
+
+    # Only fill values where the wall time is missing
+    fill_mask = df_filled[Metric.WALL_TIME.value].isnull()
+
+    df_missing = df_filled[fill_mask]
+
+    # from_timestamps = (df_missing[Metric.STOP_TIME.value] - df_missing[Metric.START_TIME.value]).dt.total_seconds()
+
+    from_timestamps = (df_filled[Metric.STOP_TIME.value] - df_filled[Metric.START_TIME.value]).dt.total_seconds()
+
+    df_filled[Metric.WALL_TIME.value] = df_filled[Metric.WALL_TIME.value].fillna(from_timestamps)
+
+    # df_filled.fillna((, inplace=True)
+
+    # df_filled.loc[fill_mask, Metric.WALL_TIME.value] = from_timestamps.loc[fill_mask]
+
+    logging.debug("Filling in missing walltimes, missing after {}".format(df_filled[Metric.WALL_TIME.value].isnull().sum()))
 
     return df_filled
