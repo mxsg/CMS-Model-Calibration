@@ -19,17 +19,43 @@ def calculate_histogram_mean(counts, bins):
     return mean
 
 
-def bin_by_quantile(x, bin_count=100):
+def bin_by_quantile(x, bin_count=100, cutoff_quantile=0.95, drop_overflow=False):
     """Create a quantile-distributed histogram with the specified number of bins from a Pandas series of values."""
 
-    quantiles = x.quantile(np.linspace(0.0, 1.0, num=bin_count + 1))
-    bin_edges = [0.0] + quantiles.tolist()
+    if cutoff_quantile < 0.0 or cutoff_quantile >= 1.0:
+        raise ValueError("Quantile must be between 0.0 and <1.0.")
 
-    hist, bins = pd.cut(x, bin_edges, right=False, include_lowest=True, duplicates='drop', retbins=True)
-    counts = hist.value_counts(sort=False).values
+    # TODO Refactor this without the duplicated code!
+    if not drop_overflow:
+        cutoff = x.quantile(cutoff_quantile)
+        x_cutoff = x[x <= cutoff]
+        x_overflow = x[x > cutoff]
 
-    return counts, bins
+        # Compute width of overflow bin by aggregating with mean of the overflowed values
+        overflow_mean = x_overflow.mean()
+        overflow_width = 2 * (overflow_mean - cutoff)
+        overflow_right = cutoff + overflow_width
 
+        quantiles = x.quantile(np.linspace(0.0, cutoff_quantile, num=bin_count + 1))
+        bin_edges = [0.0] + quantiles.tolist()
+
+        # Add the last value to the histogram
+        bin_edges = np.append(bin_edges, np.array(x.max()))
+
+        hist, bins = pd.cut(x, bin_edges, right=False, include_lowest=True, duplicates='drop', retbins=True)
+        counts = hist.value_counts(sort=False).values
+        bins[-1] = overflow_right
+
+        return counts, bins
+
+    else:
+        quantiles = x.quantile(np.linspace(0.0, cutoff_quantile, num=bin_count + 1))
+        bin_edges = [0.0] + quantiles.tolist()
+
+        hist, bins = pd.cut(x, bin_edges, right=False, include_lowest=True, duplicates='drop', retbins=True)
+        counts = hist.value_counts(sort=False).values
+
+        return counts, bins
 
 def bin_equal_width_overflow(x, bin_count=100, cutoff_quantile=0.95):
     """Create a histogram with equal-width bins, the specified number of bins from a Pandas series of values.
