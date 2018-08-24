@@ -152,10 +152,12 @@ def run():
                                                                 end_ts_col=Metric.STOP_TIME.value,
                                                                 slot_col=Metric.USED_CORES.value)
 
-    joblslots_from_reports = jobslot_timeseries['totalSlots'].resample('s').pad().resample('H').mean()
+    jobslots_from_reports = jobslot_timeseries['totalSlots'].resample('s').pad().resample('H').mean()
+
+    avg_jobslots_reports = jobslots_from_reports.mean()
 
     fig, axes = calibrationreport.multiple_jobslot_usage(
-        {'Extracted from job reports': joblslots_from_reports, 'Allocated to GridKa CMS Pilots': core_df['cms']})
+        {'Extracted from job reports': jobslots_from_reports, 'Allocated to GridKa CMS Pilots': core_df['cms']})
     # Todo Make this generic for the time period
     # axes.set_title('Allocated job slots ({})'.format("May 2018, 31 days"))
 
@@ -183,11 +185,19 @@ def run():
     node_types = nodeanalysis.extract_node_types(nodes)
 
     scaled_nodes_pilots = nodeanalysis.scale_site_by_jobslots(node_types, cms_avg_cores)
-    demands, partitions = demandextraction.extract_job_demands(job_data, report)
+    demands, partitions = demandextraction.extract_job_demands(job_data, report, equal_width=False, drop_overflow=True)
 
     job_counts_reference_summary['throughput_day'] = job_counts_reference_summary['count'].divide(day_count)
     export_job_counts(job_counts_reference_summary, 'parameters_slots_from_pilots', 'job_counts_reference_jm.csv')
     export_parameters('parameters_slots_from_pilots', scaled_nodes_pilots, demands, report)
+
+
+    # Export parameters for scaled nodes with job slots from reports
+
+    scaled_nodes_reports = nodeanalysis.scale_site_by_jobslots(node_types, avg_jobslots_reports)
+
+    export_job_counts(job_counts_reference_summary, 'parameters_slots_from_pilots', 'job_counts_reference_jm.csv')
+    export_parameters('parameters_slots_from_reports', scaled_nodes_reports, demands, report)
 
     # Export job throughputs from analyzed jobs
 
