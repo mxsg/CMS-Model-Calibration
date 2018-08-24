@@ -9,10 +9,11 @@ import pandas as pd
 import utils.report as rp
 from data.dataset import Metric
 from utils import stoex, visualization
-from utils.histogram import bin_equal_width_overflow
+from utils.histogram import bin_equal_width_overflow, bin_by_quantile
 
 
-def extract_job_demands(df, report: rp.ReportBuilder, type_split_col=Metric.JOB_TYPE.value, type_share_summary=None):
+def extract_job_demands(df, report: rp.ReportBuilder, type_split_col=Metric.JOB_TYPE.value, type_share_summary=None,
+                        equal_width=True, drop_overflow=False):
     """Extract resource demands from a data frame with job information.
 
     Returns a list of dictionaries containing a description of the statistical distribution of the
@@ -68,7 +69,8 @@ def extract_job_demands(df, report: rp.ReportBuilder, type_split_col=Metric.JOB_
         demands_dict = {'typeName': name}
 
         logging.debug("Extracting CPU demand distribution for job type {}.".format(name))
-        counts, bins = extract_demand_distribution(jobs_of_type, 'CPUDemand')
+        counts, bins = extract_demand_distribution(jobs_of_type, 'CPUDemand', equal_width=equal_width,
+                                                   drop_overflow=drop_overflow)
 
         fig, axes = visualization.draw_binned_data(counts, bins)
         axes.set_xlabel(r"CPU Demand / (s $\cdot$ (HS06 Score per Core))")
@@ -86,11 +88,13 @@ def extract_job_demands(df, report: rp.ReportBuilder, type_split_col=Metric.JOB_
         demands_dict['cpuDemandStoEx'] = stoex.hist_to_doublepdf(counts, bins)
 
         logging.debug("Extracting I/O time distribution for job type {}.".format(name))
-        counts, bins = extract_demand_distribution(jobs_of_type, 'CPUIdleTime')
+        counts, bins = extract_demand_distribution(jobs_of_type, 'CPUIdleTime', equal_width=equal_width,
+                                                   drop_overflow=drop_overflow)
         demands_dict['ioTimeStoEx'] = stoex.hist_to_doublepdf(counts, bins)
 
         logging.debug("Extracting I/O ratio distribution for job type {}.".format(name))
-        counts, bins = extract_demand_distribution(jobs_of_type, 'CPUIdleTimeRatio')
+        counts, bins = extract_demand_distribution(jobs_of_type, 'CPUIdleTimeRatio', equal_width=equal_width,
+                                                   drop_overflow=drop_overflow)
         demands_dict['ioTimeRatioStoEx'] = stoex.hist_to_doublepdf(counts, bins)
 
         fix, axes = visualization.draw_binned_data(counts, bins)
@@ -162,10 +166,15 @@ def extract_job_demands(df, report: rp.ReportBuilder, type_split_col=Metric.JOB_
     return demands_list, df_types
 
 
-def extract_demand_distribution(df, demand_col, bin_count=100):
+def extract_demand_distribution(df, demand_col, bin_count=100, equal_width=True, drop_overflow=False):
     """Extract a histogram distribution from the provided column by creating an equal-width histogram."""
 
-    counts, bins = bin_equal_width_overflow(df[demand_col], bin_count=bin_count, cutoff_quantile=0.95)
+    if equal_width:
+        counts, bins = bin_equal_width_overflow(df[demand_col], bin_count=bin_count, cutoff_quantile=0.95)
+    else:
+        counts, bins = bin_by_quantile(df[demand_col], bin_count=bin_count, cutoff_quantile=0.95,
+                                       drop_overflow=drop_overflow)
+
     return counts, bins
 
 
