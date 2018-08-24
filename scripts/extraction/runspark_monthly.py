@@ -9,12 +9,12 @@ def main():
     ssh_analytix_host = 'analytix'
 
     hdfs_base_path = 'hdfs:///cms/users/mstemmer'
-    hdfs_dataset = 'jobmonitoring-alternative'
+    hdfs_dataset = 'wmarchive-fwjr-crab'
 
-    cmsspark_script = 'gridka_jm.py'
+    cmsspark_script = 'gridka_wmarchive_selection.py'
 
     start_year = 2018
-    start_month = 5
+    start_month = 1
     num_months = 1
 
     for i in range(num_months):
@@ -26,7 +26,8 @@ def main():
         dates = list(map(lambda x: x.strftime('%Y%m%d'), dates_for_month(year, month)))
 
         hdfs_target = '/'.join([hdfs_base_path, hdfs_dataset, year_month])
-        spark_command = 'run_spark {} --fout={} --date={} --yarn'.format(cmsspark_script, hdfs_target, ','.join(dates))
+        spark_command = 'run_spark {} --fout={} --date={} --yarn --verbose'.format(cmsspark_script, hdfs_target,
+                                                                                   ','.join(dates))
         print("Spark command: {}".format(spark_command))
 
         analytix_command = ' ; '.join(ssh_setup_commands + [spark_command])
