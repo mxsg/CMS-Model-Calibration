@@ -3,6 +3,7 @@ import logging
 import numpy as np
 
 from data.dataset import Metric
+from utils import histogram
 
 
 def add_performance_data(df):
@@ -57,11 +58,29 @@ def add_performance_data(df):
 
     job_data[Metric.IO_TIME.value] = job_data[Metric.WRITE_TIME.value] + job_data[Metric.READ_TIME.value]
 
+    # Add CPU Time per event
+    job_data[Metric.CPU_TIME_PER_EVENT.value] = job_data[Metric.CPU_TIME.value] / job_data[Metric.EVENT_COUNT.value]
+    job_data[Metric.CPU_DEMAND_PER_EVENT.value] = job_data['CPUDemand'] / job_data[Metric.EVENT_COUNT.value]
+
+    # Replace infinite values with null values
+    job_data[Metric.CPU_TIME_PER_EVENT.value].replace([np.inf, -np.inf], np.nan, inplace=True)
+    job_data[Metric.CPU_DEMAND_PER_EVENT.value].replace([np.inf, -np.inf], np.nan, inplace=True)
+
+    # Add CPU Idle time per event
+    job_data[Metric.CPU_IDLE_TIME_PER_EVENT.value] = job_data[Metric.CPU_IDLE_TIME.value] / job_data[Metric.EVENT_COUNT.value]
+    job_data[Metric.CPU_IDLE_TIME_PER_EVENT.value].replace([np.inf, -np.inf], np.nan, inplace=True)
+
+    histogram.log_value_counts(job_data, Metric.CPU_TIME.value)
+    histogram.log_value_counts(job_data, Metric.EVENT_COUNT.value)
+
+    histogram.log_value_counts(job_data, Metric.CPU_TIME_PER_EVENT.value)
+    histogram.log_value_counts(job_data, Metric.CPU_DEMAND_PER_EVENT.value)
+
     return job_data
+
 
 # Todo This may belong somewhere else!
 def add_missing_node_info(df, nodes):
-
     average_computing_rate = nodes['HSScorePerCore'].mean()
     average_computing_rate_per_jobslot = nodes['HSScorePerJobslot'].mean()
 

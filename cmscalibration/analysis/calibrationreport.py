@@ -255,12 +255,10 @@ def add_jobs_report_section(dataset: Dataset, report: rp.ReportBuilder):
     report.add_figure(fig, axes, 'jobslot_usage')
 
     # report.append("## Job Event Counts")
+    #
     # df = dataset.df.copy()
     #
     # # job_event_counts
-
-    report.append("## Job I/O")
-
 
 
 

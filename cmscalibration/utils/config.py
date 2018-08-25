@@ -21,6 +21,10 @@ def load_config(config_path):
             raise ValueError(f"Could not find required key {key}!")
         globals()[key] = dictionary.get(key, default)
 
+    def load_optional_key(key, dictionary, default=None):
+        globals()[key] = dictionary.get(key, default)
+
+
     with open(config_path) as file:
         config = json.load(file)
 
@@ -34,3 +38,5 @@ def load_config(config_path):
     load_key('node_info', config)
     load_key('workflow_module', config)
     load_key('output_directory', config)
+
+    load_optional_key('cache_dir', config)

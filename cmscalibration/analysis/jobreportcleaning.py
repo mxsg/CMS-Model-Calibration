@@ -1,5 +1,6 @@
 import logging
 
+import numpy as np
 import pandas as pd
 
 from data.dataset import Metric
@@ -9,8 +10,8 @@ def clean_job_reports(df):
     df = _add_missing_walltimes(df)
     df = _add_missing_jobtypes(df)
     df = _core_thread_count_heuristic(df)
-    # df = _add_missing_core_counts(df)
-    df = _add_missing_walltimes(df)
+    df = _add_event_counts(df)
+
     return df
 
 
@@ -167,6 +168,7 @@ def _add_missing_jobtypes(df: pd.DataFrame):
 
     return df_filled
 
+
 def _add_missing_walltimes(df: pd.DataFrame):
     logging.debug("Filling in missing walltimes, missing before {}".format(df[Metric.WALL_TIME.value].isnull().sum()))
 
@@ -187,6 +189,52 @@ def _add_missing_walltimes(df: pd.DataFrame):
 
     # df_filled.loc[fill_mask, Metric.WALL_TIME.value] = from_timestamps.loc[fill_mask]
 
-    logging.debug("Filling in missing walltimes, missing after {}".format(df_filled[Metric.WALL_TIME.value].isnull().sum()))
+    logging.debug(
+        "Filling in missing walltimes, missing after {}".format(df_filled[Metric.WALL_TIME.value].isnull().sum()))
 
     return df_filled
+
+
+def _add_event_counts(df: pd.DataFrame, fill_mean=True):
+    df = df.copy()
+
+    # If setup time is available, compute event counts from them
+    events = ((df[Metric.WALL_TIME.value] - df[Metric.INIT_TIME.value]) * df[Metric.EVENT_THROUGHPUT.value]).round()
+
+    logging.debug("Number of null events after filling in with init time: {}".format(events.isnull().sum()))
+
+    # Fill in missing values without the setup time
+    events = events.fillna(df[Metric.WALL_TIME.value] * df[Metric.EVENT_THROUGHPUT.value])
+
+    logging.debug("Number of null events after filling in without init time: {}".format(events.isnull().sum()))
+
+    # Fill in with nonzero event counts from JobMonitoring information
+
+    events_nonzero_mask = df[Metric.EVENT_COUNT.value] > 0
+    events.loc[events_nonzero_mask] = df.loc[events_nonzero_mask, Metric.EVENT_COUNT.value]
+
+    logging.debug("Number of null events after filling in values from JobMonitoring: {}".format(events.isnull().sum()))
+
+    df[Metric.EVENT_COUNT.value] = events
+
+    if fill_mean:
+        missing_events = df[Metric.EVENT_COUNT.value].isnull()
+
+        grouped_dict = {Metric.JOB_CATEGORY.value: '#unknown',
+                        Metric.JOB_TYPE.value: '#unknown',
+                        Metric.EXIT_CODE.value: -1}
+
+        df_filled = df.fillna(grouped_dict)
+
+        median_filled_events = df_filled.groupby(list(grouped_dict.keys()))[Metric.EVENT_COUNT.value].transform(
+            lambda x: x.fillna(x.median()))
+
+        df.loc[missing_events, Metric.EVENT_COUNT.value] = median_filled_events.loc[missing_events]
+
+        logging.debug("Number of null events after filling in mean event in group: {}".format(
+            df[Metric.EVENT_COUNT.value].isnull().sum()))
+
+    # Reset negative event counts
+    df.loc[events < 0, Metric.EVENT_COUNT.value] = np.nan
+
+    return df

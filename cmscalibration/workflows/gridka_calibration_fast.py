@@ -57,6 +57,9 @@ def run():
     # Todo Remove this optimization again!
     # Todo Better error handling
 
+    cache_dir = 'data/cache'
+    os.makedirs(cache_dir, exist_ok=True)
+
     jm_cache = 'data/cache/jm_dataset.pkl'
     jm_dataset = None
 
@@ -227,7 +230,10 @@ def run():
 
 
 def export_job_counts(job_counts, subdir, name):
-    path = os.path.join(config.output_directory, subdir, name)
+    directory = os.path.join(config.output_directory, subdir)
+    os.makedirs(directory, exist_ok=True)
+
+    path = os.path.join(directory, name)
 
     job_counts = job_counts[job_counts['count'] > 0]
 

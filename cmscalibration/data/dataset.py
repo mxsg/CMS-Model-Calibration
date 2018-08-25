@@ -14,11 +14,17 @@ class Metric(Enum):
     CPU_TIME_PER_CORE = 'CPUTimePerCore'
     WALL_TIME = 'WallTime'
 
+    INIT_TIME = 'InitTime'
+
     USED_CORES = 'UsedCores'  # Number of jobslots a job needs
     USED_THREADS = 'UsedThreads'  # Number of Threads may also be lower
     EVENT_STREAM_COUNT = 'UsedEventStreams'
 
     EVENT_COUNT = 'EventCount'
+    EVENT_COUNT_FROM_PERF = 'EventCountHeuristic'
+
+    EVENT_THROUGHPUT = 'EventThroughput'
+
     INPUT_EVENT_COUNT = 'InputEventCount'
     OUTPUT_EVENT_COUNT = 'OutputEventCount'
 
@@ -36,6 +42,10 @@ class Metric(Enum):
     OVERALL_CPU_EFFICIENCY = 'OverallJobCPUEfficiency'
     CPU_IDLE_TIME = 'CPUIdleTime'
     CPU_IDLE_TIME_RATIO = 'CPUIdleTimeRatio'
+
+    CPU_IDLE_TIME_PER_EVENT = 'CPUIdleTimePerEvent'
+    CPU_TIME_PER_EVENT = 'CPUTimePerEvent'
+    CPU_DEMAND_PER_EVENT = 'CPUDemandPerEvent'
 
     # Time stamps
     START_TIME = 'StartTime'

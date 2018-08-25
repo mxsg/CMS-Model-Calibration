@@ -1,4 +1,5 @@
 """ Histogram utilities. """
+import logging
 
 import numpy as np
 import pandas as pd
@@ -42,6 +43,8 @@ def bin_by_quantile(x, bin_count=100, cutoff_quantile=0.95, drop_overflow=False)
         # Add the last value to the histogram
         bin_edges = np.append(bin_edges, np.array(x.max()))
 
+        bin_edges.sort()
+
         hist, bins = pd.cut(x, bin_edges, right=False, include_lowest=True, duplicates='drop', retbins=True)
         counts = hist.value_counts(sort=False).values
         bins[-1] = overflow_right
@@ -56,6 +59,7 @@ def bin_by_quantile(x, bin_count=100, cutoff_quantile=0.95, drop_overflow=False)
         counts = hist.value_counts(sort=False).values
 
         return counts, bins
+
 
 def bin_equal_width_overflow(x, bin_count=100, cutoff_quantile=0.95):
     """Create a histogram with equal-width bins, the specified number of bins from a Pandas series of values.
@@ -79,9 +83,22 @@ def bin_equal_width_overflow(x, bin_count=100, cutoff_quantile=0.95):
     # Add the last value to the histogram
     bin_edges = np.append(bin_edges, np.array(x.max()))
 
-    hist, bins = pd.cut(x, bin_edges, right=False, include_lowest=True, retbins=True)
+    hist, bins = pd.cut(x, bin_edges, right=False, include_lowest=True, retbins=True, duplicates='drop')
 
     counts = hist.value_counts(sort=False).values
     bins[-1] = overflow_right
 
     return counts, bins
+
+
+def log_value_counts(df, col):
+    total_entries = df.shape[0]
+
+    series = df[col]
+
+    logging.debug("Values in column {}: total {}, null {}, 0 {}, negative {}, positive {}"
+                  .format(col, total_entries, series.isnull().sum(),
+                          series[series == 0.0].shape[0],
+                          series[series < 0].shape[0],
+                          series[series > 0].shape[0])
+                  )

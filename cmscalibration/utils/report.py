@@ -22,7 +22,9 @@ class ReportBuilder:
         self.resource_path = os.path.join(self.base_path, self.resource_dir)
 
         # Todo Check whether these formats are supported by matplotlib
-        self.image_formats = ['pdf', 'png', 'eps']
+        # self.image_formats = ['pdf', 'png', 'eps']
+        # Todo Include pdf plots again!
+        self.image_formats = ['png']
         self.inline_image_format = 'png'
 
         if filename is None:

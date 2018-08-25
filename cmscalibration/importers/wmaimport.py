@@ -29,6 +29,10 @@ class SummarizedWMAImporter(MultiFileDataImporter):
         'inputEvents': Metric.INPUT_EVENT_COUNT,
         'outputEvents': Metric.OUTPUT_EVENT_COUNT,
 
+        # Todo Maybe rename this?
+        'TotalInitTime': Metric.INIT_TIME,
+        'EventThroughput': Metric.EVENT_THROUGHPUT,
+
         # 'readTotalSecs': Metric.READ_TIME,
         'writeTotalSecs': Metric.WRITE_TIME,
         'readTotalSecs': Metric.READ_TIME,
@@ -94,9 +98,10 @@ class SummarizedWMAImporter(MultiFileDataImporter):
             additional_tables['files'] = self._get_file_table(df_raw)
             logging.debug("Files extracted.")
 
-        jobs = df_raw.drop(columns=self.file_column).set_index(self.id_column)
+        jobs = df_raw.drop(columns=self.file_column, errors='ignore').set_index(self.id_column)
         jobs = self._convert_columns(jobs)
 
+        # Todo Drop unused columns again!
         wmdf = self._subset_with_spec_columns(jobs)
 
         # Create dataset
@@ -127,10 +132,11 @@ class SummarizedWMAImporter(MultiFileDataImporter):
         for timestamp_col in self.timestamp_columns:
             df[timestamp_col] = self._convert_timestamps(df[timestamp_col])
 
-        df['task_name'] = df['task'].str.split('/').apply(lambda x: x[-1] if len(x) >= 2 else None)
+        task_sep = '/'
+        df['task_name'] = df['task'].str.split(task_sep).apply(lambda x: x[-1] if len(x) >= 2 else None)
 
-        # Todo Do not overwrite previous values
-        df['task'] = df['task'].str.split('/').apply(lambda x: x[1] if len(x) >= 2 else None)
+        # Todo Maybe do not overwrite previous values?
+        df['task'] = df['task'].str.split('/').apply(lambda x: x[1] if len(x) >= 2 else x[0])
 
         # Convert mixed case to lowercase
         df['jobtype'] = df['jobtype'].str.lower()
@@ -145,9 +151,12 @@ class SummarizedWMAImporter(MultiFileDataImporter):
         # df['NumberOfThreads'] = df['NumberOfThreads'].fillna(0)
         df['exitCode'] = df['exitCode'].fillna(0)
 
+        df['eventsFromPerf'] = df['TotalJobTime'] * df['EventThroughput']
+
         return df
 
     def _subset_with_spec_columns(self, df):
+        # Todo Keep unused columns?
         df = df.drop(columns=[col for col in df.columns if col not in self.provided_metrics.keys()])
 
         rename_spec = {old_name: metric.value for old_name, metric in self.provided_metrics.items()}

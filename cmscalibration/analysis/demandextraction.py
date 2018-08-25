@@ -4,6 +4,7 @@ from abc import abstractmethod, ABCMeta
 from typing import Dict
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 
 import utils.report as rp
@@ -97,7 +98,7 @@ def extract_job_demands(df, report: rp.ReportBuilder, type_split_col=Metric.JOB_
                                                    drop_overflow=drop_overflow)
         demands_dict['ioTimeRatioStoEx'] = stoex.hist_to_doublepdf(counts, bins)
 
-        fix, axes = visualization.draw_binned_data(counts, bins)
+        fig, axes = visualization.draw_binned_data(counts, bins)
         axes.set_xlabel(r"I/O Ratio of CPU Demand")
         axes.set_ylabel("Probability Density")
         axes.set_title("I/O Ratio Distribution for Jobs of Type: {}".format(name))
@@ -109,6 +110,81 @@ def extract_job_demands(df, report: rp.ReportBuilder, type_split_col=Metric.JOB_
 
         io_axis.set_xlabel(r"I/O Ratio of CPU Demand")
         io_axis.set_ylabel("Probability Density")
+
+        # Add overview of event counts
+
+        logging.debug("Event counts for type {}, quantiles: {}".format(name,
+                                                                       jobs_of_type[Metric.EVENT_COUNT.value].quantile(
+                                                                           np.linspace(0, 1, 21))))
+
+        successful_jobs_of_type = jobs_of_type[jobs_of_type[Metric.EXIT_CODE.value] == 0.0]
+
+        logging.debug("Extracting Event count distribution for job type {}.".format(name))
+        counts, bins = extract_demand_distribution(jobs_of_type, Metric.EVENT_COUNT.value, equal_width=True,
+                                                   drop_overflow=False, bin_count=100, cutoff_quantile=0.9)
+
+        fig, axes = visualization.draw_binned_data(counts, bins)
+        axes.set_xlabel(r"Number of Events")
+        axes.set_ylabel("Probability Density")
+        axes.set_title("Event number distribution for jobs of type: {}".format(name))
+
+        report.add_figure(fig, axes, 'event_counts_type_{}'.format(name))
+
+        logging.debug("Extracting Event count distribution for job successful jobs of type {}.".format(name))
+        counts, bins = extract_demand_distribution(successful_jobs_of_type, Metric.EVENT_COUNT.value, equal_width=False,
+                                                   drop_overflow=False, bin_count=100, cutoff_quantile=0.9)
+
+        fig, axes = visualization.draw_binned_data(counts, bins)
+        axes.set_xlabel(r"Number of Events")
+        axes.set_ylabel("Probability Density")
+        axes.set_title("Event number distribution for successful jobs of type: {}".format(name))
+
+        report.add_figure(fig, axes, 'event_counts_successful_type_{}'.format(name))
+
+        # Add overview over the CPU demand per event
+
+        logging.debug("CPU Demand per Event for type {}, quantiles: {}".format(name, jobs_of_type[
+            Metric.CPU_DEMAND_PER_EVENT.value].quantile(np.linspace(0, 1, 21))))
+
+        logging.debug("Extracting Event count distribution for job type {}.".format(name))
+        counts, bins = extract_demand_distribution(jobs_of_type, Metric.CPU_DEMAND_PER_EVENT.value, equal_width=False,
+                                                   drop_overflow=False, bin_count=100, cutoff_quantile=0.9)
+
+        fig, axes = visualization.draw_binned_data(counts, bins)
+        axes.set_xlabel(r"CPU Demand per Event")
+        axes.set_ylabel("Probability Density")
+        axes.set_title("CPU Demand distribution per event for jobs of type: {}".format(name))
+
+        report.add_figure(fig, axes, 'cpu_demand_per_event_type_{}'.format(name))
+
+        logging.debug("CPU Demand per Event for successful jobs of type {}, quantiles: {}".format(name, jobs_of_type[
+            Metric.CPU_DEMAND_PER_EVENT.value].quantile(np.linspace(0, 1, 21))))
+
+        logging.debug("Extracting Event count distribution for job type {}.".format(name))
+        counts, bins = extract_demand_distribution(successful_jobs_of_type, Metric.CPU_DEMAND_PER_EVENT.value,
+                                                   equal_width=False,
+                                                   drop_overflow=False, bin_count=100, cutoff_quantile=0.9)
+
+        fig, axes = visualization.draw_binned_data(counts, bins)
+        axes.set_xlabel(r"CPU Demand per Event")
+        axes.set_ylabel("Probability Density")
+        axes.set_title("CPU Demand distribution per event for jobs successful jobs of type: {}".format(name))
+
+        report.add_figure(fig, axes, 'cpu_demand_per_event_successful_type_{}'.format(name))
+
+
+        logging.debug("Extracting I/O time distribution per event for job type {}.".format(name))
+        counts, bins = extract_demand_distribution(jobs_of_type, Metric.CPU_IDLE_TIME_PER_EVENT.value,
+                                                   equal_width=False,
+                                                   drop_overflow=False, bin_count=100, cutoff_quantile=0.9)
+
+        fig, axes = visualization.draw_binned_data(counts, bins)
+        axes.set_xlabel(r"I/O time per Event")
+        axes.set_ylabel("Probability Density")
+        axes.set_title("I/O time distribution per event for jobs of type: {}".format(name))
+
+        report.add_figure(fig, axes, 'io_time_per_event_type_{}'.format(name))
+
 
         jobslots = extract_jobslot_distribution(jobs_of_type)
         demands_dict['requiredJobslotsStoEx'] = stoex.to_intpmf(jobslots.index, jobslots.values, simplify=True)
@@ -166,13 +242,19 @@ def extract_job_demands(df, report: rp.ReportBuilder, type_split_col=Metric.JOB_
     return demands_list, df_types
 
 
-def extract_demand_distribution(df, demand_col, bin_count=100, equal_width=True, drop_overflow=False):
+def extract_demand_distribution(df, demand_col, bin_count=100, equal_width=True, drop_overflow=False, cutoff_quantile=0.95):
     """Extract a histogram distribution from the provided column by creating an equal-width histogram."""
 
+    x = df[demand_col].copy()
+
+    # Filter negative and null values
+    x = x.dropna()
+    x = x[x >= 0.0]
+
     if equal_width:
-        counts, bins = bin_equal_width_overflow(df[demand_col], bin_count=bin_count, cutoff_quantile=0.95)
+        counts, bins = bin_equal_width_overflow(x, bin_count=bin_count, cutoff_quantile=cutoff_quantile)
     else:
-        counts, bins = bin_by_quantile(df[demand_col], bin_count=bin_count, cutoff_quantile=0.95,
+        counts, bins = bin_by_quantile(x, bin_count=bin_count, cutoff_quantile=cutoff_quantile,
                                        drop_overflow=drop_overflow)
 
     return counts, bins
