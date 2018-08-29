@@ -2,6 +2,7 @@ import json
 import logging
 import os
 
+from data.dataset import Metric
 from interfaces.fileexport import JSONExporter
 
 
@@ -39,9 +40,17 @@ class NodeTypeExporter(JSONExporter):
     def export_to_json_file(self, node_types, path):
         logging.info("Exporting node types to file: {}".format(path))
 
-        cols = ['name', 'cores', 'jobslots', 'computingRate', 'nodeCount']
+        export_names = {
+            Metric.CPU_NAME.value: 'name',
+            Metric.SIMULATED_CORE_COUNT.value: 'cores',
+            Metric.JOBSLOT_COUNT.value: 'jobslots',
+            Metric.BENCHMARK_PER_SIMULATED_CORE.value: 'computingRate',
+            Metric.NODE_COUNT.value: 'nodeCount'
+        }
 
-        df = node_types[cols]
+        df = node_types[list(export_names.keys())]
+        df.rename(columns=export_names, inplace=True)
+
         df = df.sort_values(by=['nodeCount'], ascending=False)
 
         node_dict = df.to_dict(orient='records')

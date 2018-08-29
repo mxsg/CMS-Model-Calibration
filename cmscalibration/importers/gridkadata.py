@@ -3,6 +3,7 @@ import logging
 import numpy as np
 import pandas as pd
 
+from data.dataset import Metric
 from interfaces.fileimport import FileDataImporter
 
 
@@ -49,7 +50,8 @@ class GridKaNodeDataImporter:
     def import_file(self, path):
         logging.info("Reading GridKa node data from file {}".format(path))
 
-        check_header(path, self.header)
+        if not check_header(path, self.header):
+            logging.error("Did not match expected header format for node data!")
 
         df_raw = pd.read_csv(path, sep=',')
 
@@ -61,7 +63,21 @@ class GridKaNodeDataImporter:
         df = df_raw.drop(self.dropped_columns, axis='columns')
         df = df.drop_duplicates()
 
-        logging.info("GridKa node type file with dropped columns with shape: {}".format(df.shape))
+        metrics = {
+            'hs06': Metric.BENCHMARK_TOTAL.value,
+            'jobslots': Metric.JOBSLOT_COUNT.value,
+            'hostname': Metric.HOST_NAME.value,
+            'cpu model': Metric.CPU_NAME.value,
+            'cores': Metric.PHYSICAL_CORE_COUNT.value,
+            'interconnect': Metric.INTERCONNECT_TYPE.value
+        }
+
+        if not set(metrics.keys()).issubset(set(df.columns)):
+            raise ValueError("Missing column in node data!")
+
+        df = df.rename(columns=metrics)
+
+        logging.info("GridKa node type file with shape: {} and columns: {}".format(df.shape, df.columns))
 
         return df
 
@@ -133,6 +149,35 @@ class ColumnCoreUsageImporter(FileDataImporter):
         df.set_index('Timestamp', inplace=True)
 
         logging.info("Core usage with dropped columns with shape: {}".format(df.shape))
+
+        return df
+
+
+class CPUEfficiencyReferenceImporter(FileDataImporter):
+
+    def __init__(self, col='cms', output_column='value'):
+        super().__init__()
+
+        self.dataset_type = 'CPU Efficiency'
+        self.col = col
+        self.output_column = output_column
+
+    def import_file(self, path, start_date, end_date):
+        logging.info("Reading {} data from file {}".format(self.dataset_type, path))
+
+        df = pd.read_csv(path, sep=';')
+        logging.info("Raw {} file read with shape: {}".format(self.dataset_type, df.shape))
+
+        df['Timestamp'] = pd.to_datetime(df['Time'])
+
+        # Subset data to match time span
+        df = df[(df['Timestamp'] >= start_date) & (df['Timestamp'] <= end_date)]
+
+        df.set_index('Timestamp', inplace=True)
+        df.rename(columns={self.col: self.output_column}, inplace=True)
+        df[self.output_column] = df[self.output_column].divide(100)
+
+        logging.info("{} with shape: {}".format(self.dataset_type, df.shape))
 
         return df
 

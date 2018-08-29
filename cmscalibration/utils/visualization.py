@@ -59,3 +59,24 @@ def draw_integer_distribution_subplot(values, counts, axes, norm=True, name=''):
         axes.set_ylabel("Number of Jobs")
 
     return axes
+
+
+def draw_efficiency_timeseries(series_dict, resample_freq=None):
+    fig, axes = plt.subplots()
+
+    for name, series in series_dict.items():
+        # Resample time series
+        if resample_freq is not None:
+            series = series.resample(resample_freq).mean()
+
+        label = "{} (average {:.2f}%)".format(name, series.mean() * 100)
+        series.plot.line(ax=axes, label=label)
+
+    # axes.set_xlabel('Time')
+    axes.set_xlabel('')
+    axes.legend()
+    axes.set_ylim([0, 1])
+
+    fig.tight_layout()
+
+    return fig, axes

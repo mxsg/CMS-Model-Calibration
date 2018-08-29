@@ -40,3 +40,8 @@ def load_config(config_path):
     load_key('output_directory', config)
 
     load_optional_key('cache_dir', config)
+    load_optional_key('job_counts_reference', config)
+    load_optional_key('cpu_efficiency_reference', config)
+
+    load_optional_key('core_simulation_method', config, default='physical')
+    load_optional_key('overflow_aggregation_method', config, default='median')

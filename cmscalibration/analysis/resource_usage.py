@@ -1,5 +1,7 @@
 import pandas as pd
 
+from data.dataset import Metric
+
 _timestamp_col = 'time'
 _slot_delta_col = 'deltaCores'
 _total_slot_col = 'totalSlots'

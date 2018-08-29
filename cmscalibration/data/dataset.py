@@ -39,9 +39,11 @@ class Metric(Enum):
     WRITE_TIME = 'IOWriteTime'
 
     CPU_EFFICIENCY = 'CPUEfficiency'
-    OVERALL_CPU_EFFICIENCY = 'OverallJobCPUEfficiency'
     CPU_IDLE_TIME = 'CPUIdleTime'
     CPU_IDLE_TIME_RATIO = 'CPUIdleTimeRatio'
+
+    CPU_DEMAND = 'CPUDemand'
+    IO_RATIO = 'IORatio'
 
     CPU_IDLE_TIME_PER_EVENT = 'CPUIdleTimePerEvent'
     CPU_TIME_PER_EVENT = 'CPUTimePerEvent'
@@ -54,7 +56,6 @@ class Metric(Enum):
     TIMESTAMP = 'TimeStamp'
 
     EXIT_CODE = 'ExitCode'
-    HOST_NAME = 'HostName'
 
     # Category information
     WORKFLOW = 'Workflow'
@@ -62,6 +63,22 @@ class Metric(Enum):
     JOB_TYPE = 'JobType'
     JOB_CATEGORY = 'JobCategory'
     TASK_NAME = 'TaskName'
+
+    # Node information
+    BENCHMARK_TOTAL = 'hs06'
+
+    PHYSICAL_CORE_COUNT = 'coresPhysical'
+    LOGICAL_CORE_COUNT = 'coresLogical'
+    JOBSLOT_COUNT = 'jobslots'
+
+    BENCHMARK_PER_SIMULATED_CORE = 'computingRate'
+    SIMULATED_CORE_COUNT = 'cores'
+
+    HOST_NAME = 'HostName'
+    CPU_NAME = 'name'
+    NODE_COUNT = 'nodeCount'
+
+    INTERCONNECT_TYPE = 'Interconnect'
 
 
 class Dataset:

@@ -1,4 +1,5 @@
 """ Utilities to convert distributions to Palladio stochastic expressions. """
+import math
 
 
 def hist_to_doublepdf(counts, bins):
@@ -12,7 +13,7 @@ def hist_to_doublepdf(counts, bins):
 
     keyword = "DoublePDF"
 
-    components = ['({};{})'.format(edge, count) for (edge, count) in zip(right_edges, relative_counts)]
+    components = ['({};{})'.format(edge, count) for (edge, count) in zip(right_edges, relative_counts) if not math.isnan(edge)]
     return '{}[{}]'.format(keyword, ''.join(components))
 
 

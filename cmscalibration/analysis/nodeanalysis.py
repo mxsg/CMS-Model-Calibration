@@ -2,19 +2,30 @@ import logging
 
 import numpy as np
 
+from data.dataset import Metric
 
-def add_performance_data(df):
+
+def add_performance_data(df, simulated_cores='physical'):
     """Add performance information to a dataframe containing node information."""
 
     df = df.copy()
 
-    df['HSScorePerCore'] = df['hs06'] / df['cores']
-    df['HSScorePerJobslot'] = df['hs06'] / df['jobslots']
-
     def logical_cores(physical_cores, jobslots):
         return 2 * physical_cores if jobslots > physical_cores else physical_cores
 
-    df['coresLogical'] = df.apply(lambda x: logical_cores(x['cores'], x['jobslots']), axis='columns')
+    df[Metric.LOGICAL_CORE_COUNT.value] = df.apply(
+        lambda x: logical_cores(x[Metric.PHYSICAL_CORE_COUNT.value], x[Metric.JOBSLOT_COUNT.value]), axis='columns')
+
+    # Add the simulated core counts and computing rate
+    if simulated_cores == 'physical':
+        df[Metric.SIMULATED_CORE_COUNT.value] = df[Metric.PHYSICAL_CORE_COUNT.value]
+    elif simulated_cores == 'logical':
+        df[Metric.SIMULATED_CORE_COUNT.value] = df[Metric.LOGICAL_CORE_COUNT.value]
+    else:
+        raise ValueError("Unknown node core simulation method {}!".format(simulated_cores))
+
+    df[Metric.BENCHMARK_PER_SIMULATED_CORE.value] = df[Metric.BENCHMARK_TOTAL.value] / df[
+        Metric.SIMULATED_CORE_COUNT.value]
 
     return df
 
@@ -24,77 +35,55 @@ def extract_node_types(df, grouped_cols=None):
     from the grouped_columns parameter.
     """
 
+    # Check whether any of the values in the data frame is null
+    if df.isnull().values.any():
+        logging.warning("Found null values in node description, dropping during grouping!")
+
     # Columns that the data have to be grouped by to retrieve the different node types
     if grouped_cols is None:
-        grouped_cols = ['cpu model',
-                        'jobslots',
-                        'hs06',
-                        'cores',
-                        'interconnect',
-                        'HSScorePerCore',
-                        'HSScorePerJobslot']
+        grouped_cols = [
+            Metric.CPU_NAME.value,
+            Metric.JOBSLOT_COUNT.value,
 
-    node_types = df[grouped_cols + ['hostname']].groupby(grouped_cols, as_index=False)
+            Metric.PHYSICAL_CORE_COUNT.value,
+            Metric.SIMULATED_CORE_COUNT.value,
+            Metric.LOGICAL_CORE_COUNT.value,
+
+            Metric.BENCHMARK_TOTAL.value,
+            Metric.BENCHMARK_PER_SIMULATED_CORE.value,
+
+            Metric.INTERCONNECT_TYPE.value
+        ]
+
+    node_types = df[grouped_cols + [Metric.HOST_NAME.value]].groupby(grouped_cols, as_index=False)
 
     node_summary = node_types.count()
-    node_summary.rename(columns={'hostname': 'nodeCount',
-                                 'cpu model': 'name',
-                                 'HSScorePerCore': 'computingRate',
-                                 'HSScorePerJobslot': 'computingRatePerJobslot',
-                                 'jobslots': 'jobslots',
-                                 'cores': 'cores'},
-                        inplace=True)
 
-    logging.debug("Total job slots in resource environment: {}".format(df['jobslots'].sum()))
-    logging.debug("Total physical cores in resource environment: {}".format(df['cores'].sum()))
-    logging.debug("Total logical cores in resource environment: {}".format(df['coresLogical'].sum()))
+    node_summary.rename(columns={Metric.HOST_NAME.value: Metric.NODE_COUNT.value}, inplace=True)
+
+    logging.debug("Total job slots in resource environment: {}".format(df[Metric.JOBSLOT_COUNT.value].sum()))
+    logging.debug("Total physical cores in resource environment: {}".format(df[Metric.PHYSICAL_CORE_COUNT.value].sum()))
+    logging.debug("Total logical cores in resource environment: {}".format(df[Metric.LOGICAL_CORE_COUNT.value].sum()))
 
     logging.debug("Node type summary:\n" + node_summary.to_string())
 
     return node_summary
 
 
-def add_logical_core_count(df):
-    """Add a column containing the logical number of cores to the dataframe."""
-
-    def logical_cores(physical_cores, jobslots):
-        return 2 * physical_cores if jobslots > physical_cores else physical_cores
-
-    df['coresLogical'] = df.apply(lambda x: logical_cores(x['cores'], x['jobslots']), axis='columns')
-
-
-def scale_site_by_jobslots(df, count):
+def scale_site_by_jobslots(df, target_score, jobslot_col=Metric.JOBSLOT_COUNT.value, count_col=Metric.NODE_COUNT.value):
     """
     Scale a resource environment (data frame with node type information) to the supplied share. This method uses
     the number of jobslots in each node as a target metric.
     """
 
-    jobslot_col = 'jobslots'
-    count_col = 'nodeCount'
+    if df[jobslot_col].isnull().sum() > 0 or df[count_col].isnull().sum() > 0:
+        logging.warning("Node description has null values for jobslots or node target scores!")
 
-    # Compute the total number of slots in the dataframe and the
-    if df['jobslots'].isnull().sum() > 0 or df['nodeCount'].isnull().sum() > 0:
-        logging.warning("Node description has null values for jobslots or node count!")
-
-    total_slots = df['jobslots'].dot(df['nodeCount'])
-    share = count / total_slots
+    slots_per_type = df[jobslot_col] * df[count_col]
+    total_slots = slots_per_type.sum()
+    share = target_score / total_slots
 
     return scale_dataframe(df, share, count_col, jobslot_col)
-
-
-def scale_site_by_benchmark(df, share, method='score'):
-    """
-    Scale a resource environment (data frame with node type information) to the supplied share.
-    The 'score' method uses benchmarking scores to scale the environment.
-    """
-
-    if not method == 'score':
-        raise ValueError('unknown scaling method')
-
-    benchmark_score_col = 'hs06'
-    node_count_col = 'nodeCount'
-
-    return scale_dataframe(df, share, node_count_col, benchmark_score_col)
 
 
 def scale_dataframe(dataframe, share, count_col, score_col):

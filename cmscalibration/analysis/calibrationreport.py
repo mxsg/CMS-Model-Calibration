@@ -1,3 +1,5 @@
+import logging
+
 import matplotlib.pyplot as plt
 import pandas as pd
 from matplotlib.colors import LogNorm
@@ -64,18 +66,24 @@ def jobtypes_over_time_df(df, date_col=Metric.STOP_TIME.value, type_col=Metric.J
     return fig, axes
 
 
-def demand_histogram(df, cutoff_quantile=0.98):
+def demand_histogram(df, x_col='CPUDemand', y_col='CPUIdleTime', cutoff_quantile=0.98):
     if df.empty:
         return None, None
 
-    x = df['CPUDemand']
-    y = df['CPUIdleTime']
+    x = df[x_col]
+    y = df[y_col]
 
     x_max = x.quantile(cutoff_quantile)
     y_max = y.quantile(cutoff_quantile)
 
     fig, axes = plt.subplots()
-    counts, xedges, yedges, im = axes.hist2d(x, y, bins=50, range=[[0, x_max], [0, y_max]], norm=LogNorm())
+
+    try:
+        counts, xedges, yedges, im = axes.hist2d(x, y, bins=50, range=[[0, x_max], [0, y_max]], norm=LogNorm())
+
+    except KeyError:
+        # Empty x, y or wrong format
+        return None, None
 
     # Add legend for the colors
     fig.colorbar(im)
@@ -231,9 +239,23 @@ def add_jobs_report_section(dataset: Dataset, report: rp.ReportBuilder):
     for job_type, jobs in job_type_groups:
         report.append("CPU Demand and Idle Time for jobs of type {}".format(job_type))
         jobtype_df = jobs[(jobs['CPUDemand'].notnull()) & (jobs['CPUIdleTime'].notnull())]
-        fig, axes = demand_histogram(jobtype_df)
+        if jobtype_df.shape[0] > 0:
+            fig, axes = demand_histogram(jobtype_df)
+
         if fig is not None:
             report.add_figure(fig, axes, 'job_demands_{}'.format(job_type))
+
+    report.append("### Job I/O Ratios and Job Length")
+
+    for job_type, jobs in job_type_groups:
+        report.append("CPU Demand and I/O ratio for jobs of type {}".format(job_type))
+        jobtype_df = jobs[(jobs['CPUDemand'].notnull()) & (jobs['CPUIdleTimeRatio'].notnull())]
+        fig, axes = demand_histogram(jobtype_df, x_col='CPUDemand', y_col='CPUIdleTimeRatio')
+
+        axes.set_xlabel("CPU Demand")
+        axes.set_ylabel("I/O Time Ratio")
+        if fig is not None:
+            report.add_figure(fig, axes, 'job_demands_io_ratio_{}'.format(job_type))
 
     report.append("#### Jobslot usage overview")
     report.append()
@@ -247,20 +269,13 @@ def add_jobs_report_section(dataset: Dataset, report: rp.ReportBuilder):
                                                                 start_ts_col=Metric.START_TIME.value,
                                                                 end_ts_col=Metric.STOP_TIME.value,
                                                                 slot_col=Metric.USED_CORES.value)
-    report.append("Mean number of jobslots used: {}  ".format(mean_jobslots))
+
+    report.append("Mean number of jobslots used: {}  ".format(mean_jobslots['totalSlots']))
 
     report.append("Jobslot usage over time:")
 
     fig, axes = jobslot_usage(jobslot_timeseries)
     report.add_figure(fig, axes, 'jobslot_usage')
-
-    # report.append("## Job Event Counts")
-    #
-    # df = dataset.df.copy()
-    #
-    # # job_event_counts
-
-
 
 def add_frame_to_report(df, report: rp.ReportBuilder):
     code = rp.CodeBlock().append(df.to_string())

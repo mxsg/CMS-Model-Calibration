@@ -20,11 +20,14 @@ def calculate_histogram_mean(counts, bins):
     return mean
 
 
-def bin_by_quantile(x, bin_count=100, cutoff_quantile=0.95, drop_overflow=False):
+def bin_by_quantile(x, bin_count=100, cutoff_quantile=0.95, drop_overflow=False, overflow_agg='mean'):
     """Create a quantile-distributed histogram with the specified number of bins from a Pandas series of values."""
 
     if cutoff_quantile < 0.0 or cutoff_quantile >= 1.0:
         raise ValueError("Quantile must be between 0.0 and <1.0.")
+
+    x = x.dropna()
+    x = x[x >= 0.0]
 
     # TODO Refactor this without the duplicated code!
     if not drop_overflow:
@@ -33,7 +36,13 @@ def bin_by_quantile(x, bin_count=100, cutoff_quantile=0.95, drop_overflow=False)
         x_overflow = x[x > cutoff]
 
         # Compute width of overflow bin by aggregating with mean of the overflowed values
-        overflow_mean = x_overflow.mean()
+        if overflow_agg == 'median':
+            overflow_mean = x_overflow.median()
+        elif overflow_agg == 'mean':
+            overflow_mean = x_overflow.mean()
+        else:
+            raise ValueError("Unknown overflow aggregation method {}!".format(overflow_agg))
+
         overflow_width = 2 * (overflow_mean - cutoff)
         overflow_right = cutoff + overflow_width
 
@@ -69,6 +78,9 @@ def bin_equal_width_overflow(x, bin_count=100, cutoff_quantile=0.95):
     if cutoff_quantile < 0.0 or cutoff_quantile >= 1.0:
         raise ValueError("Quantile must be between 0.0 and <1.0.")
 
+    x = x.dropna()
+    x = x[x >= 0.0]
+
     cutoff = x.quantile(cutoff_quantile)
     x_cutoff = x[x <= cutoff]
     x_overflow = x[x > cutoff]
@@ -91,14 +103,13 @@ def bin_equal_width_overflow(x, bin_count=100, cutoff_quantile=0.95):
     return counts, bins
 
 
-def log_value_counts(df, col):
+def log_value_counts(df, col, loglevel=logging.INFO):
     total_entries = df.shape[0]
-
     series = df[col]
 
-    logging.debug("Values in column {}: total {}, null {}, 0 {}, negative {}, positive {}"
-                  .format(col, total_entries, series.isnull().sum(),
-                          series[series == 0.0].shape[0],
-                          series[series < 0].shape[0],
-                          series[series > 0].shape[0])
-                  )
+    logging.log(loglevel, "Values in column {}: total {}, null {}, zero {}, negative {}, positive {}"
+                .format(col, total_entries, series.isnull().sum(),
+                        series[series == 0.0].shape[0],
+                        series[series < 0].shape[0],
+                        series[series > 0].shape[0])
+                )
