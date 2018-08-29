@@ -24,9 +24,9 @@ To run the software, follow these steps:
 
 2. Place your datasets in the locations indicated in the calibration configuration file.
 
-3. Run the tool by invoking `python cmscalibration <calibration-conf.json>`.
+3. Run the tool by invoking `python cmscalibration --conf <path/calibration-conf.json>`.
 
-    If no path to a configuration file is given, the path is assumed to be `calibration.json` in the directory the tool is run from.
+    If no path to a configuration file is given, the path is assumed to be `calibration.json` in the working directory the tool is run from.
 
 
 ## [Input Files](#input-files)
