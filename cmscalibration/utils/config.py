@@ -36,7 +36,7 @@ def load_config(config_path):
     load_key('wm_input_dataset', config)
     load_key('jm_input_dataset', config)
     load_key('node_info', config)
-    load_key('workflow_module', config)
+    load_key('workflow', config)
     load_key('output_directory', config)
 
     load_optional_key('cache_dir', config)
