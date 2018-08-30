@@ -18,13 +18,18 @@ class JobDemandExtractor:
                  drop_overflow=False,
                  bin_count=100,
                  cutoff_quantile=0.95,
-                 overflow_agg='median'):
+                 overflow_agg='median',
+                 additional_job_options=None):
         self.report = report
         self.equal_width = equal_width
         self.drop_overflow = drop_overflow
         self.bin_count = bin_count
         self.cutoff_quantile = cutoff_quantile
         self.overflow_agg = overflow_agg
+
+        if additional_job_options is None:
+            additional_job_options = {}
+        self.additional_job_options = additional_job_options
 
     def extract_job_demands(self, df_types, type_share_summary=None):
         """Extract resource demands from a data frame with job information.
@@ -188,7 +193,11 @@ class JobDemandExtractor:
                 type_share_sum = sum(type_share_summary[type_name] for type_name in df_types.keys())
                 demands_dict['relativeFrequency'] = type_share_summary[name] / type_share_sum
 
+            # Add additional options
+            demands_dict.update(self.additional_job_options)
+
             demands_list.append(demands_dict)
+
 
         # Add overview figures to the report
         cpu_fig.add_to_report(self.report, 'cpu_demand_overview')

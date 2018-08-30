@@ -177,7 +177,8 @@ class GridKaCalibration(CalibrationWorkflow):
 
         job_demand_extractor = JobDemandExtractor(self.report, equal_width=False, drop_overflow=False, bin_count=60,
                                                   cutoff_quantile=0.95,
-                                                  overflow_agg=config.workflowOptions['overflowAggregationMethod'])
+                                                  overflow_agg=config.workflowOptions['overflowAggregationMethod'],
+                                                  additional_job_options=config.workflowOptions['additionalJobOptions'])
 
         demands, partitions = job_demand_extractor.extract_job_demands(job_groups)
 

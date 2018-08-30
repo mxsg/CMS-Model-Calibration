@@ -64,16 +64,26 @@ class NodeTypeExporter(JSONExporter):
 
 
 class DemandExporter(JSONExporter):
+
+    standard_required_metrics = ['typeName',
+                                 'cpuDemandStoEx',
+                                 'ioTimeStoEx',
+                                 'ioTimeRatioStoEx',
+                                 'requiredJobslotsStoEx',
+                                 'relativeFrequency',
+                                 'schedulingDelay',
+                                 'useIoRatio',
+                                 'resourceDemandRounds']
+
     """Instances of this class can be used to export job type resource demands."""
 
-    def export_to_json_file(self, job_type_demands, path, drop_additional=True):
+    def export_to_json_file(self, job_type_demands, path, drop_additional=True, required_list=None):
         logging.info("Exporting node types to file: {}".format(path))
-        required_metrics = ['typeName',
-                            'cpuDemandStoEx',
-                            'ioTimeStoEx',
-                            'ioTimeRatioStoEx',
-                            'requiredJobslotsStoEx',
-                            'relativeFrequency']
+
+        if required_list is not None:
+            required_metrics = required_list
+        else:
+            required_metrics = self.standard_required_metrics
 
         for item in job_type_demands:
             # Check if all required metrics are present in dictionaries
@@ -81,7 +91,7 @@ class DemandExporter(JSONExporter):
                 raise ValueError(
                     "Cannot export demands, not all columns present. Required: {}, Encountered: {}".format(
                         required_metrics,
-                        job_type_demands.keys()))
+                        item.keys()))
 
         if drop_additional:
             job_type_demands = list(map(lambda x: {k: x[k] for k in required_metrics}, job_type_demands))
