@@ -10,48 +10,6 @@ from utils.histogram import bin_equal_width_overflow, bin_by_quantile
 from utils.visualization import MultiPlotFigure
 
 
-def split_group_by_median(job_groups, group_key, col):
-    split_group = job_groups[group_key]
-    median_value = split_group[col].median()
-
-    group_low = split_group[split_group[Metric.CPU_IDLE_TIME_RATIO.value] <= median_value]
-    group_high = split_group[split_group[Metric.CPU_IDLE_TIME_RATIO.value] > median_value]
-
-    logging.debug("Splitting group with {} entries, lower {}, upper {} ({} missing).".format(split_group.shape[0],
-                                                                                             group_low.shape[0],
-                                                                                             group_high.shape[0],
-                                                                                             split_group.shape[0] -
-                                                                                             group_low.shape[0] -
-                                                                                             group_high.shape[0]))
-
-    del job_groups[group_key]
-
-    job_groups['{}lower'.format(group_key)] = group_low
-    job_groups['{}upper'.format(group_key)] = group_high
-
-
-def split_group_by_value(job_groups, group_key, col, value=None):
-    split_group = job_groups[group_key]
-
-    if not value:
-        value = split_group[col].median()
-
-    group_low = split_group[split_group[col] <= value]
-    group_high = split_group[split_group[col] > value]
-
-    logging.debug("Splitting group with {} entries, lower {}, upper {} ({} missing).".format(split_group.shape[0],
-                                                                                             group_low.shape[0],
-                                                                                             group_high.shape[0],
-                                                                                             split_group.shape[0] -
-                                                                                             group_low.shape[0] -
-                                                                                             group_high.shape[0]))
-
-    del job_groups[group_key]
-
-    job_groups['{}lower'.format(group_key)] = group_low
-    job_groups['{}upper'.format(group_key)] = group_high
-
-
 class JobDemandExtractor:
 
     def __init__(self,
@@ -280,8 +238,8 @@ class JobDemandExtractor:
             current_axis = overview_figure.current_axis
             visualization.draw_binned_data_subplot(counts, bins, current_axis, name=type_name)
 
-            current_axis.set_ylabel(xlabel)
-            current_axis.set_xlabel(ylabel)
+            current_axis.set_ylabel(ylabel)
+            current_axis.set_xlabel(xlabel)
             overview_figure.finish_subplot()
 
 

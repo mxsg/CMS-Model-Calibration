@@ -26,7 +26,8 @@ def match_jobs_to_node(jobs: pd.DataFrame, nodes: pd.DataFrame):
     logging.debug("Number of jobs per unmatched job node:")
     # Retrieve number of jobs that cannot be matched
     logging.debug(", ".join(
-        ["node: {}, jobs: {}".format(node, jobs[jobs[Metric.HOST_NAME.value] == node].shape[0]) for node in unmatched_job_nodes]))
+        ["node: {}, jobs: {}".format(node, jobs[jobs[Metric.HOST_NAME.value] == node].shape[0]) for node in
+         unmatched_job_nodes]))
 
     logging.debug("Found {} nodes without jobs.".format(len(nodes_without_jobs)))
 

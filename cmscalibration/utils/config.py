@@ -41,4 +41,3 @@ def load_config(config_path):
     load_optional_key('workflowOptions', config, default={})
     load_optional_key('inputPaths', config, default={})
     load_optional_key('outputPaths', config, default={})
-

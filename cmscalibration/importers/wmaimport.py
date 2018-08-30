@@ -4,7 +4,6 @@ import pandas as pd
 
 from data.dataset import Metric, Dataset
 from interfaces.fileimport import MultiFileDataImporter
-from utils.calibrationerrors import MissingColumnError
 
 
 class SummarizedWMAImporter(MultiFileDataImporter):
@@ -121,7 +120,6 @@ class SummarizedWMAImporter(MultiFileDataImporter):
         task_sep = '/'
         df['task_name'] = df['task'].str.split(task_sep).apply(lambda x: x[-1] if len(x) >= 2 else None)
 
-        # Todo Maybe do not overwrite previous values?
         df['task'] = df['task'].str.split('/').apply(lambda x: x[1] if len(x) >= 2 else x[0])
 
         # Convert mixed case to lowercase

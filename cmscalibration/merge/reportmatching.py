@@ -29,12 +29,10 @@ class JobReportMatcher:
         unmatched_jmdf = jmset.df.copy()
         unmatched_wmdf = wmset.df.copy()
 
-        # Todo Make match caching more robust!
         if previous_matches is not None:
             unmatched_jmdf = unmatched_jmdf.drop(previous_matches[unmatched_jmdf.index.name], errors='ignore')
             unmatched_wmdf = unmatched_wmdf.drop(previous_matches[unmatched_wmdf.index.name], errors='ignore')
 
-        # TODO Make this generic to exclude data from either data set
         # Exclude crab jobs as they are not present in the other data set
         unmatched_jmdf = unmatched_jmdf[unmatched_jmdf[jmset.col(Metric.SUBMISSION_TOOL)] != 'crab3']
 
