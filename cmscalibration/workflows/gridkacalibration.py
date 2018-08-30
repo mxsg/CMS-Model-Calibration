@@ -54,13 +54,56 @@ class GridKaCalibration(CalibrationWorkflow):
         # Import data sets
         ##################
 
-        # Timezone correction correct for errors in timestamps of JobMonitoring data
-        dataset_importer = DatasetImporter(
-            JMImporter(timezone_correction='Europe/Berlin', hostname_suffix='.gridka.de', with_files=False))
-        jm_dataset = dataset_importer.import_dataset(config.inputPaths['jm'], start_date, end_date)
+        # # Timezone correction correct for errors in timestamps of JobMonitoring data
+        # dataset_importer = DatasetImporter(
+        #     JMImporter(timezone_correction='Europe/Berlin', hostname_suffix='.gridka.de', with_files=False))
+        # jm_dataset = dataset_importer.import_dataset(config.inputPaths['jm'], start_date, end_date)
+        #
+        # wm_dataset = DatasetImporter(SummarizedWMAImporter(with_files=False)) \
+        #     .import_dataset(config.inputPaths['wma'], start_date, end_date)
 
-        wm_dataset = DatasetImporter(SummarizedWMAImporter(with_files=False)) \
-            .import_dataset(config.inputPaths['wma'], start_date, end_date)
+        if config.cacheDir:
+            cache_dir = config.cacheDir
+        else:
+            cache_dir = 'data/cache'
+
+        os.makedirs(cache_dir, exist_ok=True)
+
+        jm_cache = os.path.join(cache_dir, 'jm_dataset.pkl')
+        jm_dataset = None
+
+        try:
+            with open(jm_cache, 'rb') as file:
+                jm_dataset = pickle.load(file)
+                logging.info("Loaded {} jobs from jm dataset at {}.".format(jm_dataset.df.shape[0], jm_cache))
+        except (IOError, pickle.UnpicklingError) as e:
+            logging.info("Could not load jobs from {}".format(jm_cache))
+            # Timezone correction correct for errors in timestamps of JobMonitoring data
+            dataset_importer = DatasetImporter(
+                JMImporter(timezone_correction='Europe/Berlin', hostname_suffix='.gridka.de', with_files=False))
+            jm_dataset = dataset_importer.import_dataset(config.inputPaths['jm'], start_date, end_date)
+
+            with open(jm_cache, 'wb') as file:
+                pickle.dump(jm_dataset, file)
+                logging.info("Exported Jobmonitoring data to {}".format(jm_cache))
+
+        wm_cache = os.path.join(cache_dir, 'wm_dataset.pkl')
+        wm_dataset = None
+
+        try:
+            with open(wm_cache, 'rb') as file:
+                wm_dataset = pickle.load(file)
+                logging.info("Loaded {} jobs from jm dataset at {}.".format(wm_dataset.df.shape[0], wm_cache))
+
+        except (IOError, pickle.UnpicklingError) as e:
+            logging.info("Could not load jobs from {}".format(wm_cache))
+            # Timezone correction correct for errors in timestamps of JobMonitoring data
+            wm_dataset = DatasetImporter(SummarizedWMAImporter(with_files=False)) \
+                .import_dataset(config.inputPaths['wma'], start_date, end_date)
+
+            with open(wm_cache, 'wb') as file:
+                pickle.dump(wm_dataset, file)
+                logging.info("Exported WMArchive data to {}".format(wm_cache))
 
         cached_matches = None
         use_caching = config.cacheDir is not None
@@ -134,7 +177,8 @@ class GridKaCalibration(CalibrationWorkflow):
 
         job_demand_extractor = JobDemandExtractor(self.report, equal_width=False, drop_overflow=False, bin_count=60,
                                                   cutoff_quantile=0.95,
-                                                  overflow_agg=config.workflowOptions['overflowAggregationMethod'])
+                                                  overflow_agg=config.workflowOptions['overflowAggregationMethod'],
+                                                  additional_job_options=config.workflowOptions['additionalJobOptions'])
 
         demands, partitions = job_demand_extractor.extract_job_demands(job_groups)
 
