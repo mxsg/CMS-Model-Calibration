@@ -72,6 +72,9 @@ class Metric(Enum):
     JOBSLOT_COUNT = 'jobslots'
 
     BENCHMARK_PER_SIMULATED_CORE = 'computingRate'
+    BENCHMARK_PER_LOGICAL_CORE = 'computingRateLogical'
+    BENCHMARK_PER_PHYSICAL_CORE = 'computingRatePhysical'
+
     SIMULATED_CORE_COUNT = 'cores'
 
     HOST_NAME = 'HostName'

@@ -15,7 +15,9 @@ def add_performance_data(df):
     histogram.log_value_counts(job_data, Metric.CPU_TIME.value)
 
     # Add the CPU demand for the job
-    job_data[Metric.CPU_DEMAND.value] = job_data[Metric.CPU_TIME.value] * df[Metric.BENCHMARK_PER_SIMULATED_CORE.value]
+    # Todo This should be a parameter
+    # job_data[Metric.CPU_DEMAND.value] = job_data[Metric.CPU_TIME.value] * df[Metric.BENCHMARK_PER_SIMULATED_CORE.value]
+    job_data[Metric.CPU_DEMAND.value] = job_data[Metric.CPU_TIME.value] * df[Metric.BENCHMARK_PER_LOGICAL_CORE.value]
 
     job_data[Metric.CPU_IDLE_TIME.value] = job_data[Metric.WALL_TIME.value] * job_data[Metric.USED_CORES.value] - \
                                            job_data[Metric.CPU_TIME.value]

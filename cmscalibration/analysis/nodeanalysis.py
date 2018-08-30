@@ -26,6 +26,11 @@ def add_performance_data(df, simulated_cores='physical'):
 
     df[Metric.BENCHMARK_PER_SIMULATED_CORE.value] = df[Metric.BENCHMARK_TOTAL.value] / df[
         Metric.SIMULATED_CORE_COUNT.value]
+    df[Metric.BENCHMARK_PER_PHYSICAL_CORE.value] = df[Metric.BENCHMARK_TOTAL.value] / df[
+        Metric.PHYSICAL_CORE_COUNT.value]
+    df[Metric.BENCHMARK_PER_LOGICAL_CORE.value] = df[Metric.BENCHMARK_TOTAL.value] / df[
+        Metric.LOGICAL_CORE_COUNT.value]
+
 
     return df
 
