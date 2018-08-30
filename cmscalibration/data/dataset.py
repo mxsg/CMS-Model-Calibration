@@ -16,8 +16,8 @@ class Metric(Enum):
 
     INIT_TIME = 'InitTime'
 
-    USED_CORES = 'UsedCores'  # Number of jobslots a job needs
-    USED_THREADS = 'UsedThreads'  # Number of Threads may also be lower
+    USED_CORES = 'UsedCores'
+    USED_THREADS = 'UsedThreads'
     EVENT_STREAM_COUNT = 'UsedEventStreams'
 
     EVENT_COUNT = 'EventCount'
@@ -144,9 +144,9 @@ class Dataset:
         if not section:
             colname = metric.value
         else:
-            colname = self.sep.join(metric.value, section)
+            colname = self.sep.join([metric.value, self.sep, section])
 
         if colname not in self.df.columns:
-            raise ValueError(f'Metric {metric} is not contained in the dataset "{self.name}!"')
+            raise ValueError('Metric {} is not contained in the dataset "{}!"'.format(metric, self.name))
         else:
             return metric.value

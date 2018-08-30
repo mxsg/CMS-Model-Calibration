@@ -1,7 +1,5 @@
 import pandas as pd
 
-from data.dataset import Metric
-
 _timestamp_col = 'time'
 _slot_delta_col = 'deltaCores'
 _total_slot_col = 'totalSlots'
@@ -16,16 +14,6 @@ def mean_jobslot_usage(jobs, start_time, end_time,
 
     df = calculate_jobslot_usage(jobs, start_time, end_time, start_ts_col, end_ts_col, slot_col)
 
-    total_length = (df.index.max() - df.index.min()).total_seconds()
-
-    # df = df.copy()
-    # df['temp_multiplied'] = df[_duration_col] * df[_total_slot_col]
-    # return df['temp_multiplied']
-    #
-    # return df[_duration_col].dot(df[_total_slot_col]) / total_length
-
-    # For now, aggregate by resampling the data
-    # Todo Is this accurate?
     df_upsampled = df.resample('s').pad()
     return df_upsampled.mean()
 

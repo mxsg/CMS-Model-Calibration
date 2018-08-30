@@ -29,7 +29,6 @@ class SummarizedWMAImporter(MultiFileDataImporter):
         'inputEvents': Metric.INPUT_EVENT_COUNT,
         'outputEvents': Metric.OUTPUT_EVENT_COUNT,
 
-        # Todo Maybe rename this?
         'TotalInitTime': Metric.INIT_TIME,
         'EventThroughput': Metric.EVENT_THROUGHPUT,
 
@@ -79,14 +78,6 @@ class SummarizedWMAImporter(MultiFileDataImporter):
 
         df_raw = pd.concat(wmdf_list)
 
-        # Check if all required columns exist
-        # Todo Check again whether required columns exist, but allow additional columns not present in the original data set!
-        # missing_columns = set(self.required_columns) - set(df_raw.columns)
-        #
-        # if len(missing_columns) > 0:
-        #     logging.error("Jobmonitoring file has missing columns: {}!".format(missing_columns))
-        #     raise MissingColumnError(missing_columns)
-
         id_duplicates = df_raw[self.id_column].duplicated().sum()
         if id_duplicates > 0:
             logging.warning("WMArchive dataset contains {} duplicated IDs. Dropping them.".format(id_duplicates))
@@ -101,7 +92,6 @@ class SummarizedWMAImporter(MultiFileDataImporter):
         jobs = df_raw.drop(columns=self.file_column, errors='ignore').set_index(self.id_column)
         jobs = self._convert_columns(jobs)
 
-        # Todo Drop unused columns again!
         wmdf = self._subset_with_spec_columns(jobs)
 
         # Create dataset
@@ -112,10 +102,6 @@ class SummarizedWMAImporter(MultiFileDataImporter):
 
     def filter_with_date_range(self, dataset, start_date, end_date):
         """Filter the dataset to only contain entries between the start and end dates."""
-
-        # TODO Optimize by also filtering the files table.
-        # This is currently retained and hence also includes entries that do not correspond
-        # to any entry in the jobs table any more.
 
         jobs = dataset.df
 
@@ -156,7 +142,6 @@ class SummarizedWMAImporter(MultiFileDataImporter):
         return df
 
     def _subset_with_spec_columns(self, df):
-        # Todo Keep unused columns?
         df = df.drop(columns=[col for col in df.columns if col not in self.provided_metrics.keys()])
 
         rename_spec = {old_name: metric.value for old_name, metric in self.provided_metrics.items()}

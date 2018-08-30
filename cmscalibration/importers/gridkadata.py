@@ -51,7 +51,7 @@ class GridKaNodeDataImporter:
         logging.info("Reading GridKa node data from file {}".format(path))
 
         if not check_header(path, self.header):
-            logging.error("Did not match expected header format for node data!")
+            raise ValueError("Did not match expected header format for node data!")
 
         df_raw = pd.read_csv(path, sep=',')
 

@@ -24,7 +24,6 @@ def load_config(config_path):
     def load_optional_key(key, dictionary, default=None):
         globals()[key] = dictionary.get(key, default)
 
-
     with open(config_path) as file:
         config = json.load(file)
 

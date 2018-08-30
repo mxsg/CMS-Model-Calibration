@@ -21,9 +21,6 @@ class ReportBuilder:
         self.resource_dir = resource_dir
         self.resource_path = os.path.join(self.base_path, self.resource_dir)
 
-        # Todo Check whether these formats are supported by matplotlib
-        # self.image_formats = ['pdf', 'png', 'eps']
-        # Todo Include pdf plots again!
         self.image_formats = ['png', 'pdf']
         self.inline_image_format = 'png'
 
@@ -116,13 +113,6 @@ class CodeBlock:
             block.extend(self.content)
             block.append('```')
             return '\n'.join(block)
-
-
-class Figure:
-    """A representation of a figure."""
-
-    def __init__(self, fig, axes, title=''):
-        pass
 
 
 class ReportingEntity:

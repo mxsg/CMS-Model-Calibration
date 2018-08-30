@@ -5,12 +5,13 @@ from datetime import datetime
 
 import pandas as pd
 
-from analysis import demandextraction, calibrationreport, resource_usage, cpuefficiency, sampling
+from analysis import calibrationreport, resource_usage, cpuefficiency, sampling
 from analysis import jobreportanalysis
 from analysis import jobreportcleaning
 from analysis import nodeanalysis
+from analysis.demandextraction import FilteredJobClassifier, JobDemandExtractor
 from data.dataset import Metric
-from exporters import references
+from exporters.datasetexport import ReferenceWalltimeExporter
 from importers.dataset_import import DatasetImporter
 from importers.gridkadata import GridKaNodeDataImporter, CoreUsageImporter, ColumnCoreUsageImporter, \
     CPUEfficiencyReferenceImporter
@@ -234,16 +235,16 @@ class GridKaCalibration(CalibrationWorkflow):
         # type_split_cols = [Metric.JOB_TYPE.value, Metric.USED_CORES.value]
         type_split_cols = [Metric.JOB_TYPE.value]
 
-        job_groups = demandextraction.split_and_filter(job_data, type_split_cols)
+        # split_types = [('reprocessing1.0', Metric.CPU_IDLE_TIME_RATIO.value, 0.6)]
+        split_types = None
 
-        # split_key = 'reprocessing1.0'
-        # demandextraction.split_group_by_value(job_groups, split_key, Metric.CPU_IDLE_TIME_RATIO.value, value=0.6)
+        job_classifier = FilteredJobClassifier(type_split_cols, split_types=split_types)
+        job_groups = job_classifier.split(job_data)
 
-        demands, partitions = demandextraction.extract_job_demands(job_groups, report,
-                                                                   equal_width=False,
-                                                                   drop_overflow=False, bin_count=60,
-                                                                   cutoff_quantile=0.95,
-                                                                   overflow_agg=config.overflow_aggregation_method)
+        job_demand_extractor = JobDemandExtractor(report, equal_width=False, drop_overflow=False, bin_count=60,
+                                                  cutoff_quantile=0.95, overflow_agg=config.overflow_aggregation_method)
+
+        demands, partitions = job_demand_extractor.extract_job_demands(job_groups)
 
         export_parameters('parameters_slots_from_pilots', scaled_nodes_pilots, demands)
         export_parameters('parameters_slots_from_reports', scaled_nodes_reports, demands)
@@ -251,19 +252,14 @@ class GridKaCalibration(CalibrationWorkflow):
         # Sample half of the reports, fix random state for reproducibility
         reports_train, reports_test = sampling.split_samples(job_data, frac=0.5, random_state=38728)
 
-        sampling_report = ReportBuilder(base_path=config.output_directory, filename='sampled-calibration-report.md',
-                                        resource_dir='sampling-figures')
+        sampling_report = ReportBuilder(base_path=config.output_directory, filename='calibration-report-sampled.md',
+                                        resource_dir='figures-sampling')
 
-        job_groups_train = demandextraction.split_and_filter(reports_train, type_split_cols)
+        job_groups_train = job_classifier.split(reports_train)
 
-        # split_key = 'reprocessing1.0'
-        # demandextraction.split_group_by_value(job_groups_train, split_key, Metric.CPU_IDLE_TIME_RATIO.value, value=0.6)
+        job_demand_extractor.report = sampling_report
+        sample_demands, sample_partitions = job_demand_extractor.extract_job_demands(job_groups_train)
 
-        sample_demands, sample_partitions = demandextraction.extract_job_demands(job_groups_train, sampling_report,
-                                                                                 equal_width=False,
-                                                                                 drop_overflow=False, bin_count=60,
-                                                                                 cutoff_quantile=0.95,
-                                                                                 overflow_agg=config.overflow_aggregation_method)
         sampling_report.write()
 
         export_parameters('parameters_slots_from_pilots_sampled0.5', scaled_nodes_pilots, sample_demands)
@@ -281,10 +277,9 @@ class GridKaCalibration(CalibrationWorkflow):
                           'job_counts_reference_extracted_reports.csv')
 
         # Export walltimes
-        references.export_walltimes(partitions, os.path.join(config.output_directory, 'parameters_slots_from_pilots',
-                                                             'job_walltimes_references.csv'))
-
-        # Export job type shares
+        walltime_path = os.path.join(config.output_directory, 'parameters_slots_from_pilots',
+                                     'job_walltimes_references.csv')
+        ReferenceWalltimeExporter().export_to_json_file(partitions, walltime_path)
 
         # Write jobs to report
         calibrationreport.add_jobs_report_section(jm_dataset, report)

@@ -2,6 +2,8 @@ import json
 import logging
 import os
 
+import pandas as pd
+
 from data.dataset import Metric
 from interfaces.fileexport import JSONExporter
 
@@ -85,3 +87,28 @@ class DemandExporter(JSONExporter):
             json.dump(job_type_demands, outfile, indent=4, sort_keys=True)
 
         logging.info("Finished exporting job types.")
+
+
+class ReferenceWalltimeExporter(JSONExporter):
+
+    def __init__(self):
+        self.dropna = True
+
+    def export_to_json_file(self, partitions, path):
+
+        logging.debug("Exporting reference walltimes to {}".format(path))
+
+        dfs = []
+
+        for partition_name, df in partitions.items():
+            walltimes = df[[Metric.WALL_TIME.value]].copy()
+            walltimes['type'] = partition_name
+            dfs.append(walltimes)
+
+        result = pd.concat(dfs)
+        result.rename(columns={Metric.WALL_TIME.value: 'walltime'}, inplace=True)
+
+        if self.dropna:
+            result.dropna(inplace=True)
+
+        result.to_csv(path, header=True)

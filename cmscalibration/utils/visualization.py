@@ -1,3 +1,5 @@
+import math
+
 import matplotlib.pyplot as plt
 
 
@@ -25,15 +27,6 @@ def draw_binned_data_subplot(counts, bins, axes, name=''):
 
 def draw_integer_distribution(values, counts, norm=True, name=''):
     fig, axes = plt.subplots()
-
-    # min_value = np.min(values)
-    # max_bin = np.max(values)
-
-    # bins = np.arange(min_value, max_bin + 1)
-    # vals = np.zeros(max_bin - min_value + 1)
-
-    # for k, v in zip(values, counts):
-    #     vals[k - min_value] = v
 
     axes = draw_integer_distribution_subplot(values, counts, axes, norm, name)
 
@@ -72,7 +65,6 @@ def draw_efficiency_timeseries(series_dict, resample_freq=None):
         label = "{} (average {:.2f}%)".format(name, series.mean() * 100)
         series.plot.line(ax=axes, label=label)
 
-    # axes.set_xlabel('Time')
     axes.set_xlabel('')
     axes.legend()
     axes.set_ylim([0, 1])
@@ -80,3 +72,39 @@ def draw_efficiency_timeseries(series_dict, resample_freq=None):
     fig.tight_layout()
 
     return fig, axes
+
+
+class MultiPlotFigure:
+    """Objects of this class can be used to iteratively draw multiple subplots into the same figure."""
+
+    def __init__(self, nplots, ncols=2):
+        self.nplots = nplots
+        self.ncols = ncols
+        self.nrows = math.ceil(nplots / ncols)
+
+        self.maxplots = self.nrows * self.ncols
+
+        self.i_next_subplot = 0
+        self.fig, self.axes_list = plt.subplots(ncols=self.ncols, nrows=self.nrows)
+
+    @property
+    def current_axis(self):
+        return self.axes_list[self.i_next_subplot // self.nplots, self.i_next_subplot % self.ncols]
+
+    def finish_subplot(self):
+        if self.i_next_subplot >= self.nplots:
+            raise ValueError(
+                "Cannot step to next plot with number {}, figure is already full!".format(self.i_next_subplot + 1))
+        else:
+            self.i_next_subplot += 1
+
+    def add_to_report(self, report, identifier, width=14, height=12):
+
+        self.fig.set_size_inches(width, height)
+
+        # Remove all plots that were not used
+        for i in range(self.i_next_subplot, self.maxplots):
+            self.fig.delaxes(self.axes_list[i // self.ncols, i % self.ncols])
+
+        # Add plot to report
+        report.add_figure(self.fig, self.axes_list, identifier)

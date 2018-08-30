@@ -31,8 +31,9 @@ def main():
         print("Exiting.")
         sys.exit(1)
 
-    log_subdir = os.path.join(config.output_directory)
+    log_subdir = os.path.join(config.output_directory, 'log')
     setup_logging(log_subdir)
+    logging.getLogger().setLevel(logging.DEBUG)
 
     logging.info("Starting Model Calibration.")
 
@@ -78,14 +79,19 @@ def setup_logging(log_path: str):
     now = datetime.now()
     log_name = "logfile_{}.txt".format(now.strftime('%Y-%m-%d_%H-%M-%S'))
 
-    logging.basicConfig(
-        format='%(asctime)s [%(levelname)-5.5s]  %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S',
-        handlers=[
-            logging.FileHandler(os.path.join(log_path, log_name)),
-            logging.StreamHandler(stream=sys.stdout)
-        ],
-        level=logging.DEBUG)
+    logger = logging.getLogger()
+    logger.handlers = []
+
+    filehandler = logging.FileHandler(os.path.join(log_path, log_name))
+    streamhandler = logging.StreamHandler(stream=sys.stdout)
+
+    formatter = logging.Formatter('%(asctime)s [%(levelname)-5.5s]  %(message)s')
+    filehandler.setFormatter(formatter)
+    streamhandler.setFormatter(formatter)
+
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(filehandler)
+    logger.addHandler(streamhandler)
 
 
 if __name__ == '__main__':

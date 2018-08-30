@@ -10,6 +10,7 @@ class FileDataImporter(metaclass=ABCMeta):
 
 
 class MultiFileDataImporter(FileDataImporter, metaclass=ABCMeta):
+    """Inteface to import data spread across a list of multiple files."""
 
     @abstractmethod
     def import_file_list(self, path_list, start_date, end_date):
