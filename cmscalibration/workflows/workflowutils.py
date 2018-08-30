@@ -5,7 +5,7 @@ from utils import config
 
 
 def export_job_counts(job_counts, subdir, name):
-    directory = os.path.join(config.output_directory, subdir)
+    directory = os.path.join(config.outputDirectory, subdir)
     os.makedirs(directory, exist_ok=True)
 
     path = os.path.join(directory, name)
@@ -16,7 +16,7 @@ def export_job_counts(job_counts, subdir, name):
 
 
 def export_parameters(subdir, node_params, demand_params):
-    parameter_path = os.path.join(config.output_directory, subdir)
+    parameter_path = os.path.join(config.outputDirectory, subdir)
 
     exporter = CalibrationParameterExporter(parameter_path)
     exporter.export(node_params, 'nodes.json', demand_params, 'jobs.json')

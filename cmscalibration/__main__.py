@@ -31,7 +31,7 @@ def main():
         print("Exiting.")
         sys.exit(1)
 
-    log_subdir = os.path.join(config.output_directory, 'log')
+    log_subdir = os.path.join(config.outputDirectory, 'log')
     setup_logging(log_subdir)
     logging.getLogger().setLevel(logging.DEBUG)
 
