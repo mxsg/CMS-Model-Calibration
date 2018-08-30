@@ -30,14 +30,6 @@ class ReportBuilder:
 
         self.filename = filename
 
-    # Todo Convert into property?
-    def set_base_path(self, path):
-        self.base_path = path
-        self.resource_path = os.path.join(self.base_path, self.resource_dir)
-
-    def get_base_path(self):
-        return self.base_path
-
     def append(self, content=None):
         """ Append the content to the current report. This adds a newline after the string content. """
 
