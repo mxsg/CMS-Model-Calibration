@@ -64,12 +64,7 @@ def _advanced_heuristics_thread_count(df: pd.DataFrame):
     # Filling in missing counts with median from the group
     both_missing = df[Metric.USED_CORES.value].isnull() & df[Metric.USED_THREADS.value].isnull()
 
-    # Todo Re-enable this again?
-    # grouped_dict = {Metric.WORKFLOW.value: '#unknown', Metric.JOB_CATEGORY.value: '#unknown',
-    #                 Metric.JOB_TYPE.value: '#unknown'}
-
-    grouped_dict = {Metric.JOB_CATEGORY.value: '#unknown',
-                    Metric.JOB_TYPE.value: '#unknown'}
+    grouped_dict = {Metric.WORKFLOW.value: '#unknown'}
 
     df_filled = df.fillna(grouped_dict)
     median_filled_cores = df_filled.groupby(list(grouped_dict.keys()))[Metric.USED_CORES.value].transform(

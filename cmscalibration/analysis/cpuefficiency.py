@@ -44,7 +44,6 @@ def filter_cpu_efficiency(df, cols=None, include_zero=False):
 def calculate_efficiencies(jobs: pd.DataFrame, freq='D'):
     df = jobs[[Metric.STOP_TIME.value, Metric.WALL_TIME.value, Metric.CPU_TIME.value, Metric.USED_CORES.value]].copy()
 
-    # df.dropna(inplace=True)
     df = filter_cpu_efficiency(df, include_zero=False)
 
     df['MaxCPUTime'] = df[Metric.WALL_TIME.value] * df[Metric.USED_CORES.value]

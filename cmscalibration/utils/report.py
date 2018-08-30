@@ -1,6 +1,7 @@
 import os
-
 from datetime import datetime
+
+import matplotlib.pyplot as plt
 
 
 class ReportBuilder:
@@ -12,7 +13,7 @@ class ReportBuilder:
 
     def __init__(self, base_path=None, filename=None, resource_dir='figures'):
         self.report = ''
-        self.figures = {}
+        self.figures = []
 
         if base_path is None:
             base_path = '.'
@@ -20,6 +21,9 @@ class ReportBuilder:
 
         self.resource_dir = resource_dir
         self.resource_path = os.path.join(self.base_path, self.resource_dir)
+
+        # Make sure that directories exist
+        os.makedirs(self.resource_path, exist_ok=True)
 
         self.image_formats = ['png', 'pdf']
         self.inline_image_format = 'png'
@@ -52,24 +56,19 @@ class ReportBuilder:
         with open(report_path, 'w') as f:
             f.write(self.report)
 
-        # Write figures to files
-        os.makedirs(self.resource_path, exist_ok=True)
-
-        for figure_id, (fig, ax) in self.figures.items():
-
-            for image_format in self.image_formats:
-                fig.savefig(os.path.join(self.resource_path, figure_id + '.' + image_format))
-
     def add_figure(self, fig, axes, identifier, tight_layout=True):
 
         if tight_layout:
             fig.tight_layout()
 
-        # Todo Maybe refactor into its own class?
         if identifier in self.figures:
             raise ValueError("Figure with identical identifier '{}' already included in report!".format(identifier))
 
-        self.figures[identifier] = (fig, axes)
+        self.figures.append(identifier)
+
+        for image_format in self.image_formats:
+            fig.savefig(os.path.join(self.resource_path, identifier + '.' + image_format))
+            plt.close(fig)
 
         inline_figure_path = os.path.join(self.resource_dir, identifier + '.' + self.inline_image_format)
         self.append('![Figure {}]({})'.format(identifier, inline_figure_path))

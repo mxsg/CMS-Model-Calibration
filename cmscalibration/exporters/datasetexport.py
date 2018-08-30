@@ -66,7 +66,7 @@ class NodeTypeExporter(JSONExporter):
 class DemandExporter(JSONExporter):
     """Instances of this class can be used to export job type resource demands."""
 
-    def export_to_json_file(self, job_type_demands, path):
+    def export_to_json_file(self, job_type_demands, path, drop_additional=True):
         logging.info("Exporting node types to file: {}".format(path))
         required_metrics = ['typeName',
                             'cpuDemandStoEx',
@@ -82,6 +82,9 @@ class DemandExporter(JSONExporter):
                     "Cannot export demands, not all columns present. Required: {}, Encountered: {}".format(
                         required_metrics,
                         job_type_demands.keys()))
+
+        if drop_additional:
+            job_type_demands = list(map(lambda x: {k: x[k] for k in required_metrics}, job_type_demands))
 
         with open(path, 'w') as outfile:
             json.dump(job_type_demands, outfile, indent=4, sort_keys=True)

@@ -89,7 +89,7 @@ class MultiPlotFigure:
 
     @property
     def current_axis(self):
-        return self.axes_list[self.i_next_subplot // self.nplots, self.i_next_subplot % self.ncols]
+        return self.axes_list[self.i_next_subplot // self.ncols, self.i_next_subplot % self.ncols]
 
     def finish_subplot(self):
         if self.i_next_subplot >= self.nplots:
