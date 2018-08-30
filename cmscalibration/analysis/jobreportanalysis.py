@@ -15,11 +15,7 @@ def add_performance_data(df):
     histogram.log_value_counts(job_data, Metric.CPU_TIME.value)
 
     # Add the CPU demand for the job
-
-    # Todo This should be selectable via a parameter
-    # job_data[Metric.CPU_DEMAND.value] = job_data[Metric.CPU_TIME.value] * df[Metric.BENCHMARK_PER_SIMULATED_CORE.value]
-
-    job_data[Metric.CPU_DEMAND.value] = job_data[Metric.CPU_TIME.value] * df[Metric.BENCHMARK_PER_LOGICAL_CORE.value]
+    job_data[Metric.CPU_DEMAND.value] = job_data[Metric.CPU_TIME.value] * df[Metric.BENCHMARK_PER_THREAD.value]
 
     job_data[Metric.CPU_IDLE_TIME.value] = job_data[Metric.WALL_TIME.value] * job_data[Metric.USED_CORES.value] - \
                                            job_data[Metric.CPU_TIME.value]
@@ -75,8 +71,12 @@ def add_performance_data(df):
 def add_missing_node_info(df, nodes):
     df_filled = df.copy()
 
-    avg_rate_per_sim_core = nodes[Metric.BENCHMARK_PER_SIMULATED_CORE.value].mean()
-    df_filled[Metric.BENCHMARK_PER_SIMULATED_CORE.value].fillna(avg_rate_per_sim_core, inplace=True)
+    avg_rate_per_thread = nodes[Metric.BENCHMARK_PER_THREAD.value].mean()
+    df_filled[Metric.BENCHMARK_PER_THREAD.value].fillna(avg_rate_per_thread, inplace=True)
+
+    logging.debug("Average computing rate per thread: {}".format(avg_rate_per_thread))
+    logging.debug("Average Benchmark total: {}".format(nodes[Metric.BENCHMARK_TOTAL.value].mean()))
+    logging.debug("Average number of jobslots: {}".format(nodes[Metric.JOBSLOT_COUNT.value].mean()))
 
     return df_filled
 

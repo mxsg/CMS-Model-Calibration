@@ -66,16 +66,14 @@ class Metric(Enum):
 
     # Node information
     BENCHMARK_TOTAL = 'hs06'
+    BENCHMARK_PER_THREAD = 'computingRatePerThread'
 
     PHYSICAL_CORE_COUNT = 'coresPhysical'
     LOGICAL_CORE_COUNT = 'coresLogical'
     JOBSLOT_COUNT = 'jobslots'
 
-    BENCHMARK_PER_SIMULATED_CORE = 'computingRate'
-    BENCHMARK_PER_LOGICAL_CORE = 'computingRateLogical'
-    BENCHMARK_PER_PHYSICAL_CORE = 'computingRatePhysical'
-
     SIMULATED_CORE_COUNT = 'cores'
+    BENCHMARK_PER_CORE = 'computingRate'
 
     HOST_NAME = 'HostName'
     CPU_NAME = 'name'

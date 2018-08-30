@@ -137,7 +137,8 @@ class GridKaCalibration(CalibrationWorkflow):
 
         # Import node information
         nodes = GridKaNodeDataImporter().import_file(config.inputPaths['nodeInfo'])
-        nodes = nodeanalysis.add_performance_data(nodes, simulated_cores=config.workflowOptions['coreSimulationMethod'])
+        nodes = nodeanalysis.add_performance_data(nodes, simulated_cores=config.workflowOptions['coreSimulationMethod'],
+                                                  thread_rate_method=config.workflowOptions['threadPerformanceMethod'])
 
         # Match jobs to nodes
         matched_jobs = job_node.match_jobs_to_node(jobs_dataset.df, nodes)

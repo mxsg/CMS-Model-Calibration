@@ -5,7 +5,7 @@ import numpy as np
 from data.dataset import Metric
 
 
-def add_performance_data(df, simulated_cores='physical'):
+def add_performance_data(df, simulated_cores, thread_rate_method):
     """Add performance information to a dataframe containing node information."""
 
     df = df.copy()
@@ -24,13 +24,16 @@ def add_performance_data(df, simulated_cores='physical'):
     else:
         raise ValueError("Unknown node core simulation method {}!".format(simulated_cores))
 
-    df[Metric.BENCHMARK_PER_SIMULATED_CORE.value] = df[Metric.BENCHMARK_TOTAL.value] / df[
-        Metric.SIMULATED_CORE_COUNT.value]
-    df[Metric.BENCHMARK_PER_PHYSICAL_CORE.value] = df[Metric.BENCHMARK_TOTAL.value] / df[
-        Metric.PHYSICAL_CORE_COUNT.value]
-    df[Metric.BENCHMARK_PER_LOGICAL_CORE.value] = df[Metric.BENCHMARK_TOTAL.value] / df[
-        Metric.LOGICAL_CORE_COUNT.value]
+    if thread_rate_method == 'physical':
+        benchmark = df[Metric.BENCHMARK_TOTAL.value] / df[Metric.PHYSICAL_CORE_COUNT.value]
+    elif thread_rate_method == 'logical':
+        benchmark = df[Metric.BENCHMARK_TOTAL.value] / df[Metric.LOGICAL_CORE_COUNT.value]
+    elif thread_rate_method == 'jobslots':
+        benchmark = df[Metric.BENCHMARK_TOTAL.value] / df[Metric.JOBSLOT_COUNT.value]
+    else:
+        raise ValueError("Unknown benchmark scaling method {}!".format(simulated_cores))
 
+    df[Metric.BENCHMARK_PER_THREAD.value] = benchmark
 
     return df
 
@@ -55,7 +58,7 @@ def extract_node_types(df, grouped_cols=None):
             Metric.LOGICAL_CORE_COUNT.value,
 
             Metric.BENCHMARK_TOTAL.value,
-            Metric.BENCHMARK_PER_SIMULATED_CORE.value,
+            Metric.BENCHMARK_PER_THREAD.value,
 
             Metric.INTERCONNECT_TYPE.value
         ]
