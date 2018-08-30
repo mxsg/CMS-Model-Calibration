@@ -35,6 +35,9 @@ def add_performance_data(df, simulated_cores, thread_rate_method):
 
     df[Metric.BENCHMARK_PER_THREAD.value] = benchmark
 
+    df[Metric.BENCHMARK_PER_SIMULATED_CORE.value] = df[Metric.BENCHMARK_TOTAL.value] / df[
+        Metric.SIMULATED_CORE_COUNT.value]
+
     return df
 
 

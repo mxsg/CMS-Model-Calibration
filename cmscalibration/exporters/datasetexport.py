@@ -46,7 +46,7 @@ class NodeTypeExporter(JSONExporter):
             Metric.CPU_NAME.value: 'name',
             Metric.SIMULATED_CORE_COUNT.value: 'cores',
             Metric.JOBSLOT_COUNT.value: 'jobslots',
-            Metric.BENCHMARK_PER_THREAD.value: 'computingRate',
+            Metric.BENCHMARK_PER_SIMULATED_CORE.value: 'computingRate',
             Metric.NODE_COUNT.value: 'nodeCount'
         }
 
