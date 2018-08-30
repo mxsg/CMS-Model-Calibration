@@ -8,7 +8,7 @@ The calibration configuration file is the "top level" configuration file:
 
 - This configuration file contains metadata about the analysis to be run, dataset locations and output information.
 - The file also contains the location of the correct calibration workflow to be run upon executing the tool.
-- The tool is run by invoking `python cmscalibration <calibration-conf.json>`, assuming a valid configuration file at path `<path/calibration-conf.json>`.
+- The tool is run by invoking `python cmscalibration --conf <calibration-conf.json>`, assuming a valid configuration file at path `<path/calibration-conf.json>`.
 
 The structure can be seen in the following example:
 
