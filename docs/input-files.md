@@ -14,15 +14,28 @@ The structure can be seen in the following example:
 
 ```
 {
-    "start_date": "2018-01-01",
-    "end_date": "2018-01-01",
-    "jm_input_dataset": "data/20180625/jm-dataset.json",
-    "wm_input_dataset": "data/20180625/wm-dataset.json",
-    "node_info": "data/gridka-benchmarks-2017.csv",
-    "output_directory": "out",
-    "workflow_module": "workflows.sampling_validation"
+    "workflow": "workflows.gridkacalibration.GridKaCalibration",
+    "runName": "May 2018",
+    "startDate": "2018-05-01",
+    "endDate": "2018-06-01",
+    "cacheDir": "data/caches-may",
+    "outputDirectory": "out",
+    "workflowOptions": {
+        "coreSimulationMethod": "physical",
+        "overflowAggregationMethod": "median",
+        "typeSplitCols": ["JobType"],
+    },
+    "inputPaths": {
+        "jm": "data/jm-dataset.json",
+        "wma": "data/wm-dataset.json",
+        "nodeInfo": "data/gridka-benchmarks-2017.csv",
+        "coreUsage": "data/gridka_core_usage.csv"
+    },
+    "outputPaths": {
+        "jobCountReports": "job_counts.csv",
+        "walltimeReference": "walltimes.csv"
+    }
 }
-
 ```
 
 ## Dataset Configuration File
