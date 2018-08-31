@@ -94,16 +94,18 @@ def jobslot_usage(df, resample_freq='1H'):
     return fig, axes
 
 
-def multiple_jobslot_usage(series_dict, resample_freq='1H'):
+def multiple_jobslot_usage(series_dict, resample_freq='2H'):
     fig, axes = plt.subplots()
 
     for name, series in series_dict.items():
         # Resample time series
         usage_ts = series.resample(resample_freq).mean()
-        usage_ts.plot.line(ax=axes, label=name)
+        usage_ts.plot.line(ax=axes, label="{} (average {:.0f})".format(name, usage_ts.mean()))
 
-    axes.set_xlabel('Time')
+    axes.set_xlabel('')
     axes.set_ylabel('Allocated job slots')
+
+    fig.set_size_inches(8, 4.5)
     axes.legend()
 
     fig.tight_layout()

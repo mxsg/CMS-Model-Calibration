@@ -63,6 +63,7 @@ class JobDemandExtractor:
 
         plot_count = len(df_types)
         ncols = 2
+            # if len(df_types) < 6 else 2
 
         jobslot_fig = MultiPlotFigure(nplots=plot_count, ncols=ncols)
         cpu_fig = MultiPlotFigure(nplots=plot_count, ncols=ncols)

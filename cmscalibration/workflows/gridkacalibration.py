@@ -176,10 +176,11 @@ class GridKaCalibration(CalibrationWorkflow):
         job_classifier = FilteredJobClassifier(type_split_cols, split_types=split_types)
         job_groups = job_classifier.split(job_data)
 
-        job_demand_extractor = JobDemandExtractor(self.report, equal_width=False, drop_overflow=False, bin_count=60,
+        job_demand_extractor = JobDemandExtractor(self.report, equal_width=False, bin_count=60,
                                                   cutoff_quantile=0.95,
                                                   overflow_agg=config.workflowOptions['overflowAggregationMethod'],
-                                                  additional_job_options=config.workflowOptions['additionalJobOptions'])
+                                                  additional_job_options=config.workflowOptions['additionalJobOptions'],
+                                                  drop_overflow=config.workflowOptions.get('dropOverflow', False))
 
         demands, partitions = job_demand_extractor.extract_job_demands(job_groups)
 
@@ -236,7 +237,7 @@ class GridKaCalibration(CalibrationWorkflow):
 
         fig, axes = calibrationreport.multiple_jobslot_usage(
             {'Extracted from job reports': jobslots_from_reports,
-             'Allocated to GridKa CMS Pilots': core_reference['cms']})
+             'Allocated to GridKa CMS pilots': core_reference['cms']})
 
         self.report.add_figure(fig, axes, 'jobslot_usage_reference')
 
@@ -278,13 +279,17 @@ class GridKaCalibration(CalibrationWorkflow):
 
         fig, axes = visualization.draw_efficiency_timeseries(
             {'extracted from job reports': from_reports, 'reference from GridKa monitoring': reference})
-        axes.set_ylabel("CPU Efficiency (CPU Time / Walltime)")
+        axes.set_ylabel("CPU efficiency (CPU time / wall time)")
 
         axes.legend(['Extracted from job reports (average {:.2f}%)'.format(reports_average * 100),
                      'Reference from GridKa monitoring (average {:.2f}%)'.format(reference_mean * 100)])
 
-        axes.set_title("CPU Efficiencies ({}, {} days)".format(config.runName, (end_date - start_date).days))
+        axes.set_title("CPU efficiencies ({}, {} days)".format(config.runName, (end_date - start_date).days))
 
-        axes.set_xlim(right=(end_date - pd.Timedelta('1 days')))
+        axes.set_xlim(left=start_date, right=(end_date - pd.Timedelta('1 days')))
+
+        fig.set_size_inches(8, 4.5)
 
         self.report.add_figure(fig, axes, 'cpu_efficiencies_reference')
+        self.report.append("Efficiency from job reports: {}  ".format(reports_average))
+        self.report.append("Efficiency from GridKa: {}".format(reference_mean))

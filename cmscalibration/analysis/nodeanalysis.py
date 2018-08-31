@@ -62,6 +62,7 @@ def extract_node_types(df, grouped_cols=None):
 
             Metric.BENCHMARK_TOTAL.value,
             Metric.BENCHMARK_PER_THREAD.value,
+            Metric.BENCHMARK_PER_SIMULATED_CORE.value,
 
             Metric.INTERCONNECT_TYPE.value
         ]

@@ -98,7 +98,7 @@ class MultiPlotFigure:
         else:
             self.i_next_subplot += 1
 
-    def add_to_report(self, report, identifier, width=14, height=12):
+    def add_to_report(self, report, identifier, width=10, height=10):
 
         self.fig.set_size_inches(width, height)
 
